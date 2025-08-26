@@ -1,0 +1,91 @@
+import AppError from "../utils/appError";
+import { UniqueConstraintError } from "sequelize";
+import { User } from "../models";
+
+export class UserService {
+  /**
+   * Create a new user
+   *
+   * This method creates a user in the database
+   *
+   * @params name string
+   * @params lastname string
+   * @params email string
+   * 
+   * @returns boolean: `true` if successful, `false` otherwise.
+   */
+  static async createUser(
+    name: string,
+    lastname: string,
+    email: string,
+  ): Promise<{ id: string; name:string, lastname: string, email: string }> {
+
+    try {
+      const user = await User.create(
+        { email: email, name:name, lastname: lastname }
+      );
+
+      return {
+        id: user.id,
+        name: user.name,
+        lastname: user.lastname,
+        email: user.email,
+      };
+    } catch (err) {
+      if (err instanceof UniqueConstraintError) {
+        throw new AppError("User already exists.", 400); // Lanzamos error con código HTTP 400
+      }
+      const error = err as Error;
+      throw new AppError("Unexpected database error.", 500);
+    }
+  }
+
+  /**
+   * Update user's information
+   *
+   * This method updates the user's information in the database, using the provided parameters (id, name, email and profile_picture).
+   *
+   * @params id string: user's id.
+   * @params name string: User's name.
+   * @params email string: User's email address.
+   * @params profile_picture string: User's profile picture URL.
+   *
+   * @returns boolean: `true` if the user was updated successfully, `false` otherwise.
+   */
+  static async updateUser(
+    id: string,
+    name: string,
+    lastname: string,
+    email: string,
+  ): Promise<{
+    id: string;
+    name: string;
+    lastname: string,
+    email: string,
+  } | null> {
+    try {
+      const [user] = await User.update(
+        { name, lastname, email },
+        { where: { id } }
+      );
+      if (user === 0) {
+        throw new AppError("User not found", 404);
+      }
+      return {
+        id: id,
+        name: name,
+        lastname: lastname,
+        email: email
+      };
+    } catch (err) {
+      const error = err as Error;
+      if (err instanceof AppError && err.statusCode === 404) {
+        throw new AppError("User not found", 404);
+      }
+      if (err instanceof UniqueConstraintError) {
+        throw new AppError("User with that email already exists.", 400); // Lanzamos error con código HTTP 400
+      }
+      throw new AppError("Unexpected database error.", 500);
+    }
+  }
+}
