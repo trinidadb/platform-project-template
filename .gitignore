@@ -1,3 +1,7 @@
+# Custome paths
+/database/db_data*
+.vscode
+
 # Logs
 logs
 *.log

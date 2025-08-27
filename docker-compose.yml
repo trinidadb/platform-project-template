@@ -1,0 +1,59 @@
+services:
+  postgres_db:
+    image: "postgres:latest"
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_DOCKER_PORT}
+    restart: on-failure
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - platform-net
+    volumes:
+      - ./database/db_data/:/var/lib/postgresql/data/
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 20s
+      retries: 5
+      start_period: 30s
+
+  # server:
+  #   build: ./node_server # Build the Docker image from the server directory
+  #   container_name: ${SERVER_CONTAINER_NAME}
+  #   ports:
+  #     - ${HTTP_PORT}:${HTTP_PORT}
+  #     - ${HTTPS_PORT}:${HTTPS_PORT}
+  #   environment:
+  #     - NODE_ENV=development
+  #     - DNS_ENABLED=${DNS_ENABLED}
+  #     - DNS_SERVER=${DNS_SERVER}
+  #     - API_MODELS_HOST=${API_CONTAINER_NAME}
+  #     - API_MODELS_PORT=${API_MODELS_PORT}
+  #     - POSTGRES_HOST=${POSTGRES_CONTAINER_NAME}
+  #     - POSTGRES_PORT=${POSTGRES_DOCKER_PORT}
+  #     - POSTGRES_USER=${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=${POSTGRES_DB}
+  #     - HTTP_PORT=${HTTP_PORT}
+  #     - HTTP_BIND=${HTTP_BIND}
+  #     - HTTPS_PORT=${HTTPS_PORT}
+  #     - HTTPS_BIND=${HTTPS_BIND}
+  #     - HTTPS_KEY_FILE=${HTTPS_KEY_FILE}
+  #     - HTTPS_CERT_FILE=${HTTPS_CERT_FILE}
+  #     - HTTPS_CA_FILE=${HTTPS_CA_FILE}
+  #     - AWS_REGION=${AWS_REGION}
+  #     - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+  #     - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+  #     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  #   depends_on:
+  #     - postgres_db # Ensure the database is ready before starting the server
+  #   networks:
+  #     - platform-net
+
+networks:
+  platform-net:
+    driver: bridge
