@@ -10,3 +10,6 @@ Cosas a ver del server:
 - el codigo no se probo por lo que no se si es funcional
 - falta la db
 - verificar los ficheros de configuracion de entorno: jest.config.ts, nodemon.json, package-lock.json, package.json, tsconfigjson
+
+Cosas para ver de la postgres:
+- checkear si hay mejores practicas
