@@ -1,0 +1,72 @@
+openapi: 3.0.0
+info:
+  title: AIR Trends REST API
+  description: Documentación de la API REST con Swagger
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Servidor local
+paths:
+  /brand/create:
+    post:
+      summary: Crear una nueva empresa
+      description: Añade una nueva empresa a la base de datos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                brand_name:
+                  type: string
+                  description: Nombre de la empresa
+                brand_imgUrl:
+                  type: string
+                  description: URL del logo de la empresa
+                brand_description:
+                  type: string
+                  description: URL del sitio web de la empresa
+              required:
+                - brand_name
+                - brand_imgUrl
+                - brand_description
+      responses:
+        "201":
+          description: Empresa creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Brand"
+        "400":
+          description: Error por nombre de empresa duplicado
+        "500":
+          description: Error inesperado en la base de datos
+
+components:
+  schemas:
+    Brand:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador único de la empresa
+        name:
+          type: string
+          description: Nombre de la empresa
+        imgUrl:
+          type: string
+          description: URL del logo de la empresa
+        description:
+          type: string
+          description: URL del sitio web de la empresa
+        user:
+          type: string
+          description: User que creó la empresa
+          default: true
+      required:
+        - id
+        - name
+        - imgUrl
+        - description
+        - 
