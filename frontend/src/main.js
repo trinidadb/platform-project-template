@@ -6,7 +6,7 @@ import axios from "axios";
 
 Vue.config.productionTip = false;
 
-Vue.prototype.$http = axios; // set a
+Vue.prototype.$http = axios; // configure axios globally
 
 new Vue({
   render: (h) => h(App),
