@@ -8,10 +8,9 @@ import swaggerUi from "swagger-ui-express";
 import os from "os";
 
 import { postgresDbConnector } from "./connectors";
-import { ConfigService, swaggerSpec } from "./config";
+import { ConfigService, swaggerSpec, logger } from "./config";
 import { userRouter } from "./routes";
 import errorHandler from "./middleware/errorHandler";
-
 
 // Request Interface
 export interface Request extends express.Request {
@@ -31,10 +30,10 @@ export class Application {
     postgresDbConnector
       .sync({ force: false }) // `force: false` para no eliminar los datos existentes
       .then(() => {
-        console.log("Base de datos sincronizada con los modelos");
+        logger.info("Database synchronised with the models");
       })
       .catch((err) => {
-        console.error("Error sincronizando base de datos:", err);
+        logger.error("Error synchronising database", { error: err });
       });
 
     this.app.listen(ConfigService.getInstance().http.port, () => {
@@ -42,7 +41,8 @@ export class Application {
       const ipAddress =
         networkInterfaces["eth0"]?.find((iface: any) => iface.family === "IPv4")
           ?.address || "localhost";
-      console.log(
+
+      logger.info(
         `Server running on http://${ipAddress}:${
           ConfigService.getInstance().http.port
         }`
@@ -59,7 +59,7 @@ export class Application {
           "http://localhost:8080",
           "http://localhost:81",
           "http://212.128.157.197",
-          "http://212.128.157.197:81"
+          "http://212.128.157.197:81",
         ],
         credentials: true,
         methods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
@@ -76,7 +76,6 @@ export class Application {
 
     this.app.use(cookieParser("secretoCookie"));
     this.app.use(compression());
-
   }
 
   private parsers(): void {
@@ -99,7 +98,6 @@ export class Application {
         rolling: true, // Reset session expiration time on every request
       })
     );
-
   }
 
   private routes(): void {

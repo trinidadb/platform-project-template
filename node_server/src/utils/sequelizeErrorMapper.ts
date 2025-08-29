@@ -1,7 +1,18 @@
 import AppError from "./appError";
-import { ConnectionError, TimeoutError, DatabaseError } from "sequelize";
+import {
+  ConnectionError,
+  TimeoutError,
+  DatabaseError,
+  UniqueConstraintError,
+} from "sequelize";
 
 export function mapSequelizeError(error: any): AppError {
+  if (error instanceof UniqueConstraintError) {
+    return new AppError("User with the same data already exists.", 400);
+  }
+  if (error instanceof AppError && error.statusCode === 404) {
+    return new AppError("User not found", 404);
+  }
   if (error instanceof ConnectionError) {
     return new AppError("Could not connect to the database.", 503);
   }
@@ -14,6 +25,6 @@ export function mapSequelizeError(error: any): AppError {
   if (error instanceof AppError) {
     return error;
   }
-  // cualquier otro caso
+  // Any other case
   return new AppError("Unexpected database error.", 500);
 }
