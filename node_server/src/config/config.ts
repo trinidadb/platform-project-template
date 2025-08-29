@@ -40,33 +40,33 @@ export class PostgresConfig {
   }
 }
 
-export class S3Config {
-  public region: string;
-  public bucket: string;
-  public accessKeyId: string;
-  public secretAccessKey: string;
+// export class S3Config {
+//   public region: string;
+//   public bucket: string;
+//   public accessKeyId: string;
+//   public secretAccessKey: string;
 
-  constructor(configObj: Partial<S3Config>) {
-    this.region = configObj.region;
-    this.bucket = configObj.bucket;
-    this.accessKeyId = configObj.accessKeyId;
-    this.secretAccessKey = configObj.secretAccessKey;
-  }
-}
+//   constructor(configObj: Partial<S3Config>) {
+//     this.region = configObj.region;
+//     this.bucket = configObj.bucket;
+//     this.accessKeyId = configObj.accessKeyId;
+//     this.secretAccessKey = configObj.secretAccessKey;
+//   }
+// }
 
 export class Config {
   public redirect: boolean;
   public http: HttpConfig;
   public https: HttpsConfig;
   public db: PostgresConfig;
-  public s3: S3Config;
+//  public s3: S3Config;
 
   private constructor(configObj: Partial<Config>) {
     this.redirect = configObj.redirect ?? false;
     this.http = new HttpConfig(configObj.http);
     this.https = new HttpsConfig(configObj.https);
     this.db = new PostgresConfig(configObj.db);
-    this.s3 = new S3Config(configObj.s3);
+//    this.s3 = new S3Config(configObj.s3);
   }
 
   static loadFromEnv(): Config {
@@ -97,12 +97,12 @@ export class Config {
             : undefined,
           database: process.env.POSTGRES_DB,
         },
-        s3: {
-          region: process.env.AWS_REGION,
-          bucket: process.env.AWS_S3_BUCKET_NAME,
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        },
+        // s3: {
+        //   region: process.env.AWS_REGION,
+        //   bucket: process.env.AWS_S3_BUCKET_NAME,
+        //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        // },
       };
 
       return new Config(configObj);

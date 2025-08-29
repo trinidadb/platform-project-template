@@ -10,17 +10,17 @@ export class UserController {
    * @params res Response: The response object containing the created user
    */
   static async createUser(req: Request, res: Response, next: NextFunction) {
-    const { name, lastname, email } = req.body;
+    const { name, email, birth_date } = req.body;
 
-    if (!name || !lastname || !email) {
+    if (!name || !email || !birth_date) {
       return next(new AppError("Missing required fields", 400));
     }
 
     try {
-      const createdUser = await UserService.createUser(
+      const createdUser = await UserService.create(
         name,
-        lastname,
-        email
+        email,
+        birth_date
       );
       res.status(201).json({
         success: true,
@@ -41,18 +41,19 @@ export class UserController {
   static async updateUser(req: Request, res: Response, next: NextFunction) {
     const body = req.body;
 
-    const { id, name, lastname, email} = body;
+    const { id, name, email, active, birth_date } = body;
 
-    if (!id || !name || !lastname || !email) {
+    if (!id || !name || !email || !active || !birth_date) {
       return next(new AppError("Missing required fields", 400));
     }
 
     try {
-      const updatedUser = await UserService.updateUser(
+      const updatedUser = await UserService.update(
         id,
         name,
-        lastname,
-        email
+        email,
+        active,
+        birth_date
       );
       res.status(201).json({
         success: true,
@@ -78,7 +79,7 @@ export class UserController {
     }
 
     try {
-      const deletedUser = await UserService.deleteUser(id);
+      const deletedUser = await UserService.delete(id);
       res.status(201).json({
         success: true,
         message: "User deleted successfully",
@@ -88,4 +89,4 @@ export class UserController {
       next(err);
     }
   }
-}
+ }

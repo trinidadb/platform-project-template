@@ -9,28 +9,23 @@ export class UserService {
    * This method creates a user in the database
    *
    * @params name string
-   * @params lastname string
    * @params email string
+   * @params birth_date string in format 'YYYY-mm-dd'
    * 
-   * @returns boolean: `true` if successful, `false` otherwise.
+   * @returns the user created
    */
-  static async createUser(
+  static async create(
     name: string,
-    lastname: string,
     email: string,
-  ): Promise<{ id: string; name:string, lastname: string, email: string }> {
+    birth_date: string
+  ) {
 
     try {
       const user = await User.create(
-        { email: email, name:name, lastname: lastname }
+        { email: email, name:name, birth_date: new Date(birth_date) }
       );
 
-      return {
-        id: user.id,
-        name: user.name,
-        lastname: user.lastname,
-        email: user.email,
-      };
+      return user;
     } catch (err) {
       if (err instanceof UniqueConstraintError) {
         throw new AppError("User already exists.", 400); // Lanzamos error con código HTTP 400
@@ -43,40 +38,32 @@ export class UserService {
   /**
    * Update user's information
    *
-   * This method updates the user's information in the database, using the provided parameters (id, name, email and profile_picture).
+   * This method updates the user's information in the database, using the provided parameters (id, name, email, active and birth_date).
    *
-   * @params id string: user's id.
-   * @params name string: User's name.
-   * @params email string: User's email address.
-   * @params profile_picture string: User's profile picture URL.
+   * @params id string
+   * @params name string
+   * @params email string
+   * @params birth_date string in format 'YYYY-mm-dd'
+   * @params active bool
    *
-   * @returns boolean: `true` if the user was updated successfully, `false` otherwise.
+   * @returns user
    */
-  static async updateUser(
+  static async update(
     id: string,
     name: string,
-    lastname: string,
     email: string,
-  ): Promise<{
-    id: string;
-    name: string;
-    lastname: string,
-    email: string,
-  } | null> {
+    active: boolean,
+    birth_date: string
+  ) {
     try {
       const [user] = await User.update(
-        { name, lastname, email },
+        { name, email, active, birth_date },
         { where: { id } }
       );
       if (user === 0) {
         throw new AppError("User not found", 404);
       }
-      return {
-        id: id,
-        name: name,
-        lastname: lastname,
-        email: email
-      };
+      return user;
     } catch (err) {
       const error = err as Error;
       if (err instanceof AppError && err.statusCode === 404) {
@@ -85,6 +72,21 @@ export class UserService {
       if (err instanceof UniqueConstraintError) {
         throw new AppError("User with that email already exists.", 400); // Lanzamos error con código HTTP 400
       }
+      throw new AppError("Unexpected database error.", 500);
+    }
+  }
+
+  static async delete(id: string) {
+    try {
+      const userToDelete = await User.findByPk(id);
+      if (!userToDelete) {
+        throw new AppError("User not found.", 404);
+      }
+      await userToDelete.destroy();
+      return {
+        id: userToDelete.getDataValue("id"),
+      };
+    } catch (err: any) {
       throw new AppError("Unexpected database error.", 500);
     }
   }
