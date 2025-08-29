@@ -4,21 +4,13 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import expressSession from "express-session";
+import swaggerUi from "swagger-ui-express";
 import os from "os";
 
-// PostgreSQL
 import { postgresDbConnector } from "./connectors";
-
-// Configuration
-import { ConfigService } from "./config";
-
-// Routes
+import { ConfigService, swaggerSpec } from "./config";
 import { userRouter } from "./routes";
-
-// Middleware
 import errorHandler from "./middleware/errorHandler";
-
-// Logger
 import logger from "./config/logger";
 
 // Request Interface
@@ -34,6 +26,7 @@ export class Application {
     this.config();
     this.parsers();
     this.routes();
+    this.setupSwagger(); // Add this line
 
     postgresDbConnector
       .sync({ force: false }) // `force: false` para no eliminar los datos existentes
@@ -113,5 +106,10 @@ export class Application {
     this.app.use("/users", userRouter);
 
     this.app.use(errorHandler); // capturamos todos los errores de la aplicación
+  }
+
+  private setupSwagger(): void {
+    this.app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    console.log("Swagger docs available at /api-docs");
   }
 }

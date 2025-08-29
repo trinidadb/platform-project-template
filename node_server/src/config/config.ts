@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
+import path from "path";
 import logger from "./logger";
-dotenv.config({ path: "../.env" });
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 export class HttpConfig {
   public port: number;
@@ -41,6 +42,16 @@ export class PostgresConfig {
   }
 }
 
+export class DnsConfig {
+  public enabled: boolean;
+  public server: string;
+
+  constructor(configObj: Partial<DnsConfig>) {
+    this.enabled = configObj.enabled ?? false;
+    this.server = configObj.server;
+  }
+}
+
 // export class S3Config {
 //   public region: string;
 //   public bucket: string;
@@ -60,6 +71,7 @@ export class Config {
   public http: HttpConfig;
   public https: HttpsConfig;
   public db: PostgresConfig;
+  public dns: DnsConfig;
   //  public s3: S3Config;
 
   private constructor(configObj: Partial<Config>) {
@@ -67,6 +79,7 @@ export class Config {
     this.http = new HttpConfig(configObj.http);
     this.https = new HttpsConfig(configObj.https);
     this.db = new PostgresConfig(configObj.db);
+    this.dns = new DnsConfig(configObj.dns);
     //    this.s3 = new S3Config(configObj.s3);
   }
 
@@ -97,6 +110,10 @@ export class Config {
             ? Number(process.env.POSTGRES_PORT)
             : undefined,
           database: process.env.POSTGRES_DB,
+        },
+        dns: {
+          enabled: process.env.DNS_ENABLED === "true",
+          server: process.env.DNS_SERVER,
         },
         // s3: {
         //   region: process.env.AWS_REGION,

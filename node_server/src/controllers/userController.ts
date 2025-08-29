@@ -69,7 +69,7 @@ export class UserController {
    * Delete user method
    * This method deletes the user using the required field id
    * @params req Request: The request object containing the user's id
-   * @params res Response: The response object is a String containing the message "User deleted successfully"
+   * @params res Response: The response object is a json containing the message "User deleted successfully" and the id of the user deleted
    */
   static async deleteUser(req: Request, res: Response, next: NextFunction) {
     const { id } = req.body;
@@ -79,11 +79,11 @@ export class UserController {
     }
 
     try {
-      const deletedUser = await UserService.delete(id);
+      const deletedUserId = await UserService.delete(id);
       res.status(201).json({
         success: true,
         message: "User deleted successfully",
-        data: deletedUser,
+        data: deletedUserId,
       });
     } catch (err) {
       next(err);
