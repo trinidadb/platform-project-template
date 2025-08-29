@@ -38,12 +38,9 @@ export class Application {
 
     this.app.listen(ConfigService.getInstance().http.port, () => {
       const networkInterfaces = os.networkInterfaces();
-      const ipAddress =
-        networkInterfaces["eth0"]?.find((iface: any) => iface.family === "IPv4")
-          ?.address || "localhost";
 
       logger.info(
-        `Server running on http://${ipAddress}:${
+        `Server running on http://${ConfigService.getInstance().http.bind}:${
           ConfigService.getInstance().http.port
         }`
       );

@@ -5,6 +5,39 @@ import AppError from "../utils/appError";
 export class UserController {
   /**
    * Create a new user method
+   * This method returns all users
+   * @params res Response: The response object containing all users of the database
+   */
+  static async get_all(req: Request, res: Response, next: NextFunction) {
+    try {
+      const users = await UserService.get_all();
+      return res.status(200).json(users);
+    } catch (error) {
+      console.error(error);
+      return next(error);
+    }
+  }
+  /**
+   * Return a user
+   * The method returns the user with the specified ID.
+   * @params req Request: The request object containing the ID
+   * @params res Response: The response object containing the user
+   */
+  static async get_user_by_id(req: Request, res: Response, next: NextFunction) {
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError("Missing required fields.", 400));
+    }
+    try {
+      const user = await UserService.get_user_by_id(id);
+      return res.status(200).json(user);
+    } catch (error) {
+      console.error(error);
+      return next(error);
+    }
+  }
+  /**
+   * Create a new user method
    * This method creates a new user in the database using the name, lastname and email. Returns the created user
    * @params req Request: The request object containing the name, lastname and email
    * @params res Response: The response object containing the created user
@@ -17,11 +50,7 @@ export class UserController {
     }
 
     try {
-      const createdUser = await UserService.create(
-        name,
-        email,
-        birth_date
-      );
+      const createdUser = await UserService.create(name, email, birth_date);
       res.status(201).json({
         success: true,
         message: "User created successfully",
@@ -89,4 +118,4 @@ export class UserController {
       next(err);
     }
   }
- }
+}
