@@ -1,7 +1,6 @@
 import { Client } from "pg";
 import { Sequelize } from "sequelize";
-import { ConfigService } from "../config";
-import logger from "../config/logger";
+import { ConfigService, logger } from "../config";
 
 export class PostgresSingleton {
   private static instance: PostgresSingleton;

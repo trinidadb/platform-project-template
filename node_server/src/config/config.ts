@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
-import logger from "./logger";
+import { logger } from ".";
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 export class HttpConfig {

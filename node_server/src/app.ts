@@ -8,10 +8,9 @@ import swaggerUi from "swagger-ui-express";
 import os from "os";
 
 import { postgresDbConnector } from "./connectors";
-import { ConfigService, swaggerSpec } from "./config";
+import { ConfigService, swaggerSpec, logger } from "./config";
 import { userRouter } from "./routes";
 import errorHandler from "./middleware/errorHandler";
-import logger from "./config/logger";
 
 // Request Interface
 export interface Request extends express.Request {
