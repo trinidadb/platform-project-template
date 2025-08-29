@@ -76,6 +76,15 @@ export class UserService {
     }
   }
 
+    /**
+   * Delete user
+   *
+   * This method deletes an existing user
+   *
+   * @params id string
+   *
+   * @returns id string of user deleted
+   */
   static async delete(id: string) {
     try {
       const userToDelete = await User.findByPk(id);
