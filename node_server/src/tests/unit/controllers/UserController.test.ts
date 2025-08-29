@@ -1,8 +1,8 @@
 import request from "supertest";
-import { UserService } from "../../services";
+import { UserService } from "../../../services";
 import express, { Application } from "express";
-import errorHandler from "../../middleware/errorHandler";
-import AppError from "../../utils/appError";
+import errorHandler from "../../../middleware/errorHandler";
+import AppError from "../../../utils/appError";
 
 jest.mock("../services/userService");
 jest.mock("../utils/logger");
