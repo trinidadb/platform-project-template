@@ -1,0 +1,242 @@
+# This file documents all the endpoints related to Users
+
+tags:
+  - name: Users
+    description: API for user management
+
+paths:
+  /users/create:
+    post:
+      summary: Create a new user
+      tags: [Users]
+      requestBody:
+        description: Object containing the new user's information.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: The user was successfully created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseUser'
+        '400':
+          description: Bad Request - Missing required fields or user already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/update:
+    put:
+      summary: Update an existing user
+      tags: [Users]
+      requestBody:
+        description: Object with the user ID and the fields to update.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '201':
+          description: The user was successfully updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseUser'
+        '400':
+          description: Bad Request - Missing required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found - The user with the specified ID was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/delete:
+    post:
+      summary: Delete a user by ID
+      tags: [Users]
+      requestBody:
+        description: The ID of the user to delete.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteUserRequest'
+      responses:
+        '201':
+          description: The user was successfully deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseDelete'
+        '400':
+          description: Bad Request - Missing ID field.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found - The user with the specified ID was not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+#---------------------------------------------------
+# Reusable Schemas for models and responses
+#---------------------------------------------------
+components:
+  schemas:
+    # Main User Object
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        birth_date:
+          type: string
+          format: date
+          example: "1990-01-15"
+        active:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Request Body Schemas
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - birth_date
+      properties:
+        name:
+          type: string
+          example: "Jane Doe"
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        birth_date:
+          type: string
+          format: date
+          example: "1995-05-20"
+    
+    UpdateUserRequest:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - active
+        - birth_date
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+        name:
+          type: string
+          example: "Jane Smith"
+        email:
+          type: string
+          format: email
+          example: "jane.smith@example.com"
+        active:
+          type: boolean
+          example: false
+        birth_date:
+          type: string
+          format: date
+          example: "1995-05-21"
+
+    DeleteUserRequest:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+    
+    # Response Schemas
+    SuccessResponseUser:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/User'
+
+    SuccessResponseDelete:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "User deleted successfully"
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Missing required fields"

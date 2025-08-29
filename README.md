@@ -2,7 +2,6 @@
 
 Welcome to the project! This document is your guide to understanding, running, and contributing to this application. Please read it carefully to ensure a smooth development process.
 
-
 ## **🏛️ Core Philosophy & Architecture**
 
 This project is built with maintainability, scalability, and best practices in mind. We adhere to principles like **SOLID** to ensure our code is understandable, flexible, and robust.
@@ -10,6 +9,7 @@ This project is built with maintainability, scalability, and best practices in m
 Our goal is to follow a **Hexagonal Architecture** (also known as Ports and Adapters). Here's what that means for you in simple terms:
 
 - **The Core Logic is Independent:** The heart of our application (the business rules, found in the /src/services directory) has no knowledge of the outside world. It doesn't know about our database, any external APIs, or even that it's being accessed via HTTP. It's pure, testable logic.
+
 
 - **Ports are the Gates:** The core logic defines "ports" (interfaces or abstract classes) through which it communicates.
 

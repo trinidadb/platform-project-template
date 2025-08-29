@@ -1,10 +1,10 @@
 services:
   postgres_db:
-    image: "postgres:latest"
+    image: "postgres:15" # Best practice: Pin to a specific major version, not 'latest'
     container_name: ${POSTGRES_CONTAINER_NAME}
     ports:
       - ${POSTGRES_PORT}:${POSTGRES_DOCKER_PORT}
-    restart: on-failure
+    restart: unless-stopped
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -12,7 +12,6 @@ services:
     networks:
       - platform-net
     volumes:
-      - ./database/db_data/:/var/lib/postgresql/data/
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -31,8 +30,6 @@ services:
       - NODE_ENV=development
       - DNS_ENABLED=${DNS_ENABLED}
       - DNS_SERVER=${DNS_SERVER}
-      - API_MODELS_HOST=${API_CONTAINER_NAME}
-      - API_MODELS_PORT=${API_MODELS_PORT}
       - POSTGRES_HOST=${POSTGRES_CONTAINER_NAME}
       - POSTGRES_PORT=${POSTGRES_DOCKER_PORT}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -45,15 +42,16 @@ services:
       - HTTPS_KEY_FILE=${HTTPS_KEY_FILE}
       - HTTPS_CERT_FILE=${HTTPS_CERT_FILE}
       - HTTPS_CA_FILE=${HTTPS_CA_FILE}
-      - AWS_REGION=${AWS_REGION}
-      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     depends_on:
-      - postgres_db # Ensure the database is ready before starting the server
+      postgres_db:
+        condition: service_healthy # Ensure the database is ready before starting the server
     networks:
       - platform-net
 
 networks:
   platform-net:
     driver: bridge
+
+
+# This command stops and removes containers, networks, AND volumes
+# docker-compose down -v
