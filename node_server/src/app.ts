@@ -30,10 +30,10 @@ export class Application {
     postgresDbConnector
       .sync({ force: false }) // `force: false` para no eliminar los datos existentes
       .then(() => {
-        logger.info("Base de datos sincronizada con los modelos");
+        logger.info("Database synchronised with the models");
       })
       .catch((err) => {
-        logger.error("Error sincronizando base de datos", { error: err });
+        logger.error("Error synchronising database", { error: err });
       });
 
     this.app.listen(ConfigService.getInstance().http.port, () => {
@@ -43,7 +43,7 @@ export class Application {
           ?.address || "localhost";
 
       logger.info(
-        `Servidor ejecutándose en http://${ipAddress}:${
+        `Server running on http://${ipAddress}:${
           ConfigService.getInstance().http.port
         }`
       );
