@@ -35,7 +35,7 @@ Before you begin, ensure you have the following installed on your machine:
 
 ### **1. Configuration: The .env File**
 
-All configuration for this project is managed through environment variables. The single source of truth for local development is the .env file.
+All configuration for this project is managed through environment variables. The single source of truth for local development is the .env file. 🚨🚨🚨 HARDCODED VARIABLES WILL NOT BE ACCEPTED IN THE CODE 🚨🚨🚨
 
 1. **Create your own .env file:** Copy the example file to create your local configuration.
    ```
