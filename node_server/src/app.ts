@@ -4,23 +4,22 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import expressSession from "express-session";
+import os from "os";
 
 // PostgreSQL
 import { postgresDbConnector } from "./connectors";
-
 
 // Configuration
 import { ConfigService } from "./config";
 
 // Routes
-import {
-  userRouter,
-} from "./routes";
+import { userRouter } from "./routes";
 
-//Middleware
+// Middleware
 import errorHandler from "./middleware/errorHandler";
 
-import os from "os";
+// Logger
+import logger from "./config/logger";
 
 // Request Interface
 export interface Request extends express.Request {
@@ -39,10 +38,10 @@ export class Application {
     postgresDbConnector
       .sync({ force: false }) // `force: false` para no eliminar los datos existentes
       .then(() => {
-        console.log("Base de datos sincronizada con los modelos");
+        logger.info("Base de datos sincronizada con los modelos");
       })
       .catch((err) => {
-        console.error("Error sincronizando base de datos:", err);
+        logger.error("Error sincronizando base de datos", { error: err });
       });
 
     this.app.listen(ConfigService.getInstance().http.port, () => {
@@ -50,8 +49,9 @@ export class Application {
       const ipAddress =
         networkInterfaces["eth0"]?.find((iface: any) => iface.family === "IPv4")
           ?.address || "localhost";
-      console.log(
-        `Server running on http://${ipAddress}:${
+
+      logger.info(
+        `Servidor ejecutándose en http://${ipAddress}:${
           ConfigService.getInstance().http.port
         }`
       );
@@ -67,7 +67,7 @@ export class Application {
           "http://localhost:8080",
           "http://localhost:81",
           "http://212.128.157.197",
-          "http://212.128.157.197:81"
+          "http://212.128.157.197:81",
         ],
         credentials: true,
         methods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
@@ -84,7 +84,6 @@ export class Application {
 
     this.app.use(cookieParser("secretoCookie"));
     this.app.use(compression());
-
   }
 
   private parsers(): void {
@@ -107,7 +106,6 @@ export class Application {
         rolling: true, // Reset session expiration time on every request
       })
     );
-
   }
 
   private routes(): void {

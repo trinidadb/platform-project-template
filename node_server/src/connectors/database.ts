@@ -1,6 +1,7 @@
-import { Client } from 'pg';
+import { Client } from "pg";
 import { Sequelize } from "sequelize";
-import { ConfigService } from '../config';
+import { ConfigService } from "../config";
+import logger from "../config/logger";
 
 export class PostgresSingleton {
   private static instance: PostgresSingleton;
@@ -22,9 +23,12 @@ export class PostgresSingleton {
       this.instance = new PostgresSingleton();
       try {
         await this.instance.client.connect();
-        console.log("Connected to Postgres");
-      } catch (error) {
-        console.error("Failed to connect to Postgres:", error);
+        logger.info("Connected to Postgres");
+      } catch (error: any) {
+        logger.error("Failed to connect to Postgres", {
+          message: error?.message,
+          stack: error?.stack,
+        });
         throw error;
       }
     }
@@ -35,7 +39,6 @@ export class PostgresSingleton {
     return this.client;
   }
 }
-
 
 class PostgresSingletonSequelize {
   private static instance: Sequelize;
@@ -51,10 +54,10 @@ class PostgresSingletonSequelize {
         port: config.port,
         database: config.database,
         username: config.user,
-        password:config.password,
-        logging: false, // Desactiva logs SQL
+        password: config.password,
+        logging: false, // Deactivate logs
       });
-      console.log(" PostgreSQL Singleton creado.");
+      logger.info("PostgreSQL Sequelize Singleton created");
     }
     return PostgresSingletonSequelize.instance;
   }
