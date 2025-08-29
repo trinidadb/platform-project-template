@@ -5,6 +5,64 @@ tags:
     description: API for user management
 
 paths:
+  /users:
+    get:
+      summary: Retrieve all users
+      tags: [Users]
+      responses:
+        "200":
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}:
+    get:
+      summary: Retrieve a user by ID
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the user to retrieve.
+          schema:
+            type: string
+            format: uuid
+            example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+      responses:
+        "200":
+          description: A single user object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Bad Request - Missing required fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found - The user with the specified ID was not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /users/create:
     post:
       summary: Create a new user
@@ -15,26 +73,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserRequest'
+              $ref: "#/components/schemas/CreateUserRequest"
       responses:
-        '201':
+        "201":
           description: The user was successfully created.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseUser'
-        '400':
+                $ref: "#/components/schemas/SuccessResponseUser"
+        "400":
           description: Bad Request - Missing required fields or user already exists.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /users/update:
     put:
@@ -46,32 +104,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUserRequest'
+              $ref: "#/components/schemas/UpdateUserRequest"
       responses:
-        '201':
+        "201":
           description: The user was successfully updated.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseUser'
-        '400':
+                $ref: "#/components/schemas/SuccessResponseUser"
+        "400":
           description: Bad Request - Missing required fields.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not Found - The user with the specified ID was not found.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /users/delete:
     post:
@@ -83,32 +141,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DeleteUserRequest'
+              $ref: "#/components/schemas/DeleteUserRequest"
       responses:
-        '201':
+        "201":
           description: The user was successfully deleted.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponseDelete'
-        '400':
+                $ref: "#/components/schemas/SuccessResponseDelete"
+        "400":
           description: Bad Request - Missing ID field.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
           description: Not Found - The user with the specified ID was not found.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal Server Error.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
 #---------------------------------------------------
 # Reusable Schemas for models and responses
@@ -163,7 +221,7 @@ components:
           type: string
           format: date
           example: "1995-05-20"
-    
+
     UpdateUserRequest:
       type: object
       required:
@@ -201,7 +259,7 @@ components:
           type: string
           format: uuid
           example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
-    
+
     # Response Schemas
     SuccessResponseUser:
       type: object
@@ -212,7 +270,7 @@ components:
         message:
           type: string
         data:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/User"
 
     SuccessResponseDelete:
       type: object

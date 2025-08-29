@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { UserService } from "../services/userService";
 import AppError from "../utils/appError";
+import { logger } from "../config";
 
 export class UserController {
   /**
@@ -13,8 +14,8 @@ export class UserController {
       const users = await UserService.get_all();
       return res.status(200).json(users);
     } catch (error) {
-      console.error(error);
-      return next(error);
+      logger.error(`Error getting all users: ${error}`);
+      next(error);
     }
   }
   /**
@@ -32,8 +33,8 @@ export class UserController {
       const user = await UserService.get_user_by_id(id);
       return res.status(200).json(user);
     } catch (error) {
-      console.error(error);
-      return next(error);
+      logger.error(`Error getting user by ID: ${id} - ${error}`);
+      next(error);
     }
   }
   /**
