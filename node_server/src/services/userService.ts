@@ -9,12 +9,12 @@ export class UserService {
    * This method creates a user in the database
    *
    * @params name string
-   * @params lastname string
    * @params email string
+   * @params birth_date string in format 'YYYY-mm-dd'
    * 
-   * @returns boolean: `true` if successful, `false` otherwise.
+   * @returns the user created
    */
-  static async createUser(
+  static async create(
     name: string,
     email: string,
     birth_date: string
@@ -38,16 +38,17 @@ export class UserService {
   /**
    * Update user's information
    *
-   * This method updates the user's information in the database, using the provided parameters (id, name, email and profile_picture).
+   * This method updates the user's information in the database, using the provided parameters (id, name, email, active and birth_date).
    *
-   * @params id string: user's id.
-   * @params name string: User's name.
-   * @params email string: User's email address.
-   * @params profile_picture string: User's profile picture URL.
+   * @params id string
+   * @params name string
+   * @params email string
+   * @params birth_date string in format 'YYYY-mm-dd'
+   * @params active bool
    *
-   * @returns boolean: `true` if the user was updated successfully, `false` otherwise.
+   * @returns user
    */
-  static async updateUser(
+  static async update(
     id: string,
     name: string,
     email: string,
@@ -71,6 +72,21 @@ export class UserService {
       if (err instanceof UniqueConstraintError) {
         throw new AppError("User with that email already exists.", 400); // Lanzamos error con código HTTP 400
       }
+      throw new AppError("Unexpected database error.", 500);
+    }
+  }
+
+  static async delete(id: string) {
+    try {
+      const userToDelete = await User.findByPk(id);
+      if (!userToDelete) {
+        throw new AppError("User not found.", 404);
+      }
+      await userToDelete.destroy();
+      return {
+        id: userToDelete.getDataValue("id"),
+      };
+    } catch (err: any) {
       throw new AppError("Unexpected database error.", 500);
     }
   }
