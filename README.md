@@ -38,7 +38,9 @@ Before you begin, ensure you have the following installed on your machine:
 All configuration for this project is managed through environment variables. The single source of truth for local development is the .env file.
 
 1. **Create your own .env file:** Copy the example file to create your local configuration.\
+   ```
    cp .env.example .env
+   ```
 
 2. **Fill in the values:** Open the new .env file and populate the variables with your specific settings (passwords, ports, etc.).
 
@@ -48,16 +50,20 @@ All configuration for this project is managed through environment variables. The
 This is the most important section. To add a **new** environment variable, you **MUST** update it in three places. If you miss a step, it will not work.
 
 1. **Add it to .env:** Define your new variable in your local .env file (and also add it to .env.example without a value, so other developers know it exists).\
+   ```
    \# .env\
    MY\_NEW\_VARIABLE=some\_secret\_value
+   ```
 
 2. **Pass it in docker-compose.yml:** The Docker container is an isolated environment. You must explicitly pass the variable from your .env file to the correct service in the docker-compose.yml file.\
+   ```
    \# docker-compose.yml\
    services:\
      server:\
        environment:\
          # ... other variables\
          - MY\_NEW\_VARIABLE=${MY\_NEW\_VARIABLE}
+   ```
 
 3. (For node_server, if necessary) **Add it to the ConfigService:** To maintain architectural purity, **you must never use process.env directly in your application code**. All configuration is managed by a single, reliable service. Add your new variable to the configuration loader in node\_server/src/config/config.ts. This ensures it's properly typed and accessible throughout the app in a controlled way.
 
@@ -69,45 +75,117 @@ This is the most important section. To add a **new** environment variable, you *
 This is the easiest way to run the entire stack, including the database and any other services.
 
 - **Start all services:**\
+  ```
   \# This command builds the images if they don't exist and starts the containers.\
   docker-compose up --build
+  ```
 
 - Clean Restart (Delete all data):\
   If you have "trash" in your database and want a completely fresh start, you must bring the containers down and explicitly remove the volumes.\
+  ```
   \# This stops containers, removes them, and DELETES associated volumes (like your DB data).\
   docker-compose down -v
+  ```
 
 - **Stop the services:**\
+  ```
   \# This stops the containers but preserves the data in the volumes.\
   docker-compose down
+  ```
 
 - Run only specific services:\
   If you don't need all the services (e.g., you don't need the database), you can simply comment out or delete that service's entry in the docker-compose.yml file before running docker-compose up. If you only want to run one container you can do
+  ```
   \# This only runs you postgres container (db_postgres).\
   docker-compose up --build db_postgres
+  ```
 
 ### **Running Node.js Server Locally (For focused backend development)**
 
 This is useful when you are actively working on the Node.js server and want faster feedback.
 
 1. **Install dependencies:**\
+   ```
    cd node\_server\
    npm install
+   ```
 
-2. Run in Development Mode:\
+2. **Run in Development Mode:**\
    This uses nodemon to watch for file changes and automatically restart the server. This is what you'll use 99% of the time.\
+   ```
    npm run dev
+   ```
 
-3. Build for Production:\
+3. **Build for Production:**\
    This compiles your TypeScript code into plain JavaScript in the /build directory.\
+   ```
    npm run build
+   ```
 
-4. Start in Production Mode:\
+4. **Start in Production Mode:**\
    This runs the compiled JavaScript code from the /build directory. It's faster but does not auto-reload.\
+   ```
    npm run start
+   ```
 
 
 ## **🛠️ Development Workflow & Best Practices**
+
+**Follow Existing Patterns:** Before adding new code, take a moment to look at the existing structure. Place your files in the appropriate directories. Name your files, variables, and classes following the conventions you see in the project (e.g., `userController.ts`, `UserService`). Consistency is key to a readable codebase.
+
+### 🏗️ Code Conventions & Structure for Node.js Server
+
+- **Centralized Configuration:** Any specific configuration for a part of the `node_server` (e.g., Swagger options, CORS settings) should be defined in its own file within the `src/config/` directory. This keeps our main `app.ts` clean and makes configuration easy to find.
+
+- **Connectors for External Services:** As part of our Hexagonal Architecture, the `src/connectors/` directory is where we place our "adapters" for external services. These are responsible for the specific logic of connecting to and communicating with things like our database or AWS S3. We use the **Singleton Pattern** in these connectors to ensure we only ever have one connection instance to these services, which is efficient and prevents resource leaks.
+
+  - **Example 1: Database Connector (`database.ts`)** This file provides a singleton instance for both the Sequelize ORM and the native `pg` client.
+
+        import { Client } from 'pg';
+        import { Sequelize } from "sequelize";
+        import { ConfigService } from '../config';
+
+        class PostgresSingletonSequelize {
+          private static instance: Sequelize;
+
+          private constructor() {} // Prevents direct instantiation
+
+          public static getInstance(): Sequelize {
+            if (!PostgresSingletonSequelize.instance) {
+              const config = ConfigService.getInstance().db;
+              PostgresSingletonSequelize.instance = new Sequelize({
+                dialect: "postgres",
+                host: config.host,
+                port: config.port,
+                database: config.database,
+                username: config.user,
+                password: config.password,
+                logging: false,
+              });
+            }
+            return PostgresSingletonSequelize.instance;
+          }
+        }
+
+        export const postgresDbConnector = PostgresSingletonSequelize.getInstance();
+
+  - **Example 2: AWS S3 Connector (`aws.ts`)** This file creates and exports a configured S3 client.
+
+        import { S3Client } from "@aws-sdk/client-s3";
+        import { ConfigService } from "../config";
+
+        const config = ConfigService.getInstance().s3;
+
+        export const s3Client = new S3Client({
+          region: config.region,
+          credentials:
+            config.accessKeyId && config.secretAccessKey
+              ? {
+                  accessKeyId: config.accessKeyId,
+                  secretAccessKey: config.secretAccessKey,
+                }
+              : undefined,
+        });
 
 ### **📚 API Documentation (Swagger) for Node.js Server**
 
