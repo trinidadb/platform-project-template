@@ -10,17 +10,17 @@ export class UserController {
    * @params res Response: The response object containing the created user
    */
   static async createUser(req: Request, res: Response, next: NextFunction) {
-    const { name, lastname, email } = req.body;
+    const { name, email, birth_date } = req.body;
 
-    if (!name || !lastname || !email) {
+    if (!name || !email || !birth_date) {
       return next(new AppError("Missing required fields", 400));
     }
 
     try {
       const createdUser = await UserService.createUser(
         name,
-        lastname,
-        email
+        email,
+        birth_date
       );
       res.status(201).json({
         success: true,
@@ -41,9 +41,9 @@ export class UserController {
   static async updateUser(req: Request, res: Response, next: NextFunction) {
     const body = req.body;
 
-    const { id, name, lastname, email} = body;
+    const { id, name, email, active, birth_date } = body;
 
-    if (!id || !name || !lastname || !email) {
+    if (!id || !name || !email || !active || !birth_date) {
       return next(new AppError("Missing required fields", 400));
     }
 
@@ -51,8 +51,9 @@ export class UserController {
       const updatedUser = await UserService.updateUser(
         id,
         name,
-        lastname,
-        email
+        email,
+        active,
+        birth_date
       );
       res.status(201).json({
         success: true,
@@ -64,28 +65,28 @@ export class UserController {
     }
   }
 
-  /**
-   * Delete user method
-   * This method deletes the user using the required field id
-   * @params req Request: The request object containing the user's id
-   * @params res Response: The response object is a String containing the message "User deleted successfully"
-   */
-  static async deleteUser(req: Request, res: Response, next: NextFunction) {
-    const { id } = req.body;
+//   /**
+//    * Delete user method
+//    * This method deletes the user using the required field id
+//    * @params req Request: The request object containing the user's id
+//    * @params res Response: The response object is a String containing the message "User deleted successfully"
+//    */
+//   static async deleteUser(req: Request, res: Response, next: NextFunction) {
+//     const { id } = req.body;
 
-    if (!id) {
-      return next(new AppError("Missing required fields", 400));
-    }
+//     if (!id) {
+//       return next(new AppError("Missing required fields", 400));
+//     }
 
-    try {
-      const deletedUser = await UserService.deleteUser(id);
-      res.status(201).json({
-        success: true,
-        message: "User deleted successfully",
-        data: deletedUser,
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
-}
+//     try {
+//       const deletedUser = await UserService.deleteUser(id);
+//       res.status(201).json({
+//         success: true,
+//         message: "User deleted successfully",
+//         data: deletedUser,
+//       });
+//     } catch (err) {
+//       next(err);
+//     }
+//   }
+ }

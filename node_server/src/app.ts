@@ -4,31 +4,22 @@ import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import expressSession from "express-session";
-import path from "path";
 
 // PostgreSQL
-import { postgresDbConnector, postgresDbClient } from "./connectors";
+import { postgresDbConnector } from "./connectors";
 
-// Passport
-import passport from "passport";
-import bcrypt from "bcrypt";
-import { Strategy as LocalStrategy } from "passport-local";
 
 // Configuration
 import { ConfigService } from "./config";
 
 // Routes
 import {
-  authRouter,
+  userRouter,
 } from "./routes";
 
 //Middleware
-import { isAuthenticated } from "./middleware";
 import errorHandler from "./middleware/errorHandler";
 
-//Swagger
-import swaggerUi from "swagger-ui-express";
-import swaggerJSDoc from "swagger-jsdoc";
 import os from "os";
 
 // Request Interface
@@ -43,7 +34,6 @@ export class Application {
     this.app = express();
     this.config();
     this.parsers();
-    this.passport();
     this.routes();
 
     postgresDbConnector
@@ -95,31 +85,6 @@ export class Application {
     this.app.use(cookieParser("secretoCookie"));
     this.app.use(compression());
 
-    const swaggerUrl = ConfigService.getInstance().dns.enabled ? ConfigService.getInstance().dns.server : ConfigService.getInstance().http.bind
-    
-    const swaggerOptions: swaggerJSDoc.Options = {
-      definition: {
-      openapi: '3.0.0',
-      info: {
-        title: 'Aquilon API',
-        version: '1.0.0',
-        description: 'Documentación de la API de Aquilon',
-      },
-      servers: [
-        {
-        url: `http://${swaggerUrl}:${ConfigService.getInstance().http.port}`,
-        },
-      ],
-      },
-      apis: ['./src/routes/*.ts'],
-    };
-
-    const swaggerSpec = swaggerJSDoc(swaggerOptions);
-    this.app.use(
-      '/api-docs',
-      swaggerUi.serve,
-      swaggerUi.setup(swaggerSpec)
-    );
   }
 
   private parsers(): void {
@@ -143,89 +108,12 @@ export class Application {
       })
     );
 
-    this.app.use(passport.initialize());
-    this.app.use(passport.session());
   }
 
   private routes(): void {
     // Authentication routes
-    this.app.use("/auth", authRouter);
+    this.app.use("/users", userRouter);
 
     this.app.use(errorHandler); // capturamos todos los errores de la aplicación
-  }
-
-  private async passport(): Promise<void> {
-    const postgresInstance = await postgresDbClient;
-    const client = postgresInstance.getClient();
-
-    passport.use(
-      new LocalStrategy(
-        {
-          usernameField: "email",
-          passwordField: "password",
-        },
-        async (email, password, done) => {
-          try {
-            const queryText = `SELECT 
-              u.id, 
-              u.name, 
-              u.email, 
-              u.password
-            FROM "users" u
-            WHERE u.email = $1
-          `;
-            const result = await client.query(queryText, [email]);
-
-            if (result.rows.length === 0) {
-              return done(null, false, { message: "User doesn't exist." });
-            }
-
-            const user = result.rows[0];
-
-            const isMatch = await bcrypt.compare(password, user.password);
-            if (!isMatch) {
-              return done(null, false, { message: "Incorrect password." });
-            }
-
-            return done(null, user);
-          } catch (err) {
-            console.error("Error during authentication:", err);
-            return done(err);
-          }
-        }
-      )
-    );
-
-    // Serialize: solo almacena el ID en la sesión
-    passport.serializeUser(function (user: any, done: any) {
-      done(null, user.id);
-    });
-
-    // Deserialize: obtiene toda la información del usuario a partir del ID
-    passport.deserializeUser(async function (id, done) {
-      try {
-        const queryText = `
-          SELECT 
-            u.id, 
-            u.name, 
-            u.email, 
-            u.password, 
-          FROM "users" u
-          WHERE u.id = $1
-        `;
-
-        const result = await client.query(queryText, [id]);
-
-        if (result.rows.length > 0) {
-          const user = result.rows[0];
-          return done(null, user);
-        } else {
-          return done(null, false);
-        }
-      } catch (err) {
-        console.error("Error during deserialization:", err);
-        return done(err);
-      }
-    });
   }
 }

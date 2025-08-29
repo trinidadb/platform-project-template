@@ -16,21 +16,16 @@ export class UserService {
    */
   static async createUser(
     name: string,
-    lastname: string,
     email: string,
-  ): Promise<{ id: string; name:string, lastname: string, email: string }> {
+    birth_date: string
+  ) {
 
     try {
       const user = await User.create(
-        { email: email, name:name, lastname: lastname }
+        { email: email, name:name, birth_date: new Date(birth_date) }
       );
 
-      return {
-        id: user.id,
-        name: user.name,
-        lastname: user.lastname,
-        email: user.email,
-      };
+      return user;
     } catch (err) {
       if (err instanceof UniqueConstraintError) {
         throw new AppError("User already exists.", 400); // Lanzamos error con código HTTP 400
@@ -55,28 +50,19 @@ export class UserService {
   static async updateUser(
     id: string,
     name: string,
-    lastname: string,
     email: string,
-  ): Promise<{
-    id: string;
-    name: string;
-    lastname: string,
-    email: string,
-  } | null> {
+    active: boolean,
+    birth_date: string
+  ) {
     try {
       const [user] = await User.update(
-        { name, lastname, email },
+        { name, email, active, birth_date },
         { where: { id } }
       );
       if (user === 0) {
         throw new AppError("User not found", 404);
       }
-      return {
-        id: id,
-        name: name,
-        lastname: lastname,
-        email: email
-      };
+      return user;
     } catch (err) {
       const error = err as Error;
       if (err instanceof AppError && err.statusCode === 404) {

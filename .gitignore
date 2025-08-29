@@ -1,5 +1,10 @@
 # Custome paths
 /database/db_data*
+<<<<<<< Updated upstream
+=======
+.vscode
+*/build
+>>>>>>> Stashed changes
 
 # Logs
 logs
