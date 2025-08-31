@@ -101,11 +101,22 @@ This is the most important section. To add a **new** environment variable, you *
 
 This is the easiest way to run the entire stack, including the database and any other services.
 
-- **Start all services:**
+- **Start all services (except the ones that have a profile set):**
   ```
   # This command builds the images if they don't exist and starts the containers.
   docker-compose up --build
   ```
+
+   Be aware that:
+      - `docker compose up` → **starts containers**. It uses existing images. It **won’t rebuild** images unless they’re missing.
+      - `docker compose up --build` → **builds images first**, then starts containers. It’s like running `docker compose build && docker compose up`.
+   
+   Common scenarios:
+   
+   - **You’re bind-mounting code** (`./app:/usr/src/app`): code changes reflect live; **no rebuild** needed unless deps/Dockerfile changed. Use plain `up`.
+   - **You’re baking code into the image** (`COPY . .` in Dockerfile): code changes require `--build` (or a separate `docker compose build`).
+   - **Image comes from a registry and you want the latest**: use `docker compose up --pull always` (or run `docker compose pull` first).
+
 
 - **Clean Restart (Delete all data):**\
   If you have "trash" in your database and want a completely fresh start, you must bring the containers down and explicitly remove the volumes.
@@ -120,13 +131,37 @@ This is the easiest way to run the entire stack, including the database and any 
   docker-compose down
   ```
 
-- **Run only specific services:**
+- **Run only specific services:**\
   If you don't need all the services (e.g., you don't need the database), you can simply comment out or delete that service's entry in the docker-compose.yml file before running docker-compose up. If you only want to run one container you can do
   ```
   # This only runs you postgres container (db_postgres).
   docker-compose up --build db_postgres
   ```
+  
+- **Run services with a specific profile (e.g., "test"):**\
+  If you also want to run services with a specific profile (e.g., "test"), you should do:
+  ```
+  # This run all profile-less services and the ones with a "test" profile
+  docker compose --profile test up --build
+  ```
+  If you only want to run services with a specific profile (e.g., "test"), you should do:
+  ```
+  # This run all profile-less services and the ones with a "test" profile
+  docker compose --profile test up --build postgres_test_db
+  ```
 
+   A service with a profile looks like this:
+  ``` #docker-compose
+   services:
+     ...
+     postgres_test_db:
+       image: "postgres:15"
+       profiles: ["test"]   # container built only when profile 'test' is active
+       ...
+     ...
+  ```
+
+  
 <!-- TOC --><a name="-database-initialization-initsql"></a>
 #### 💾 Database Initialization (`init.sql`)
 
