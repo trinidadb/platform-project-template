@@ -15,9 +15,9 @@ Our goal is to follow a **Hexagonal Architecture** (also known as Ports and Adap
 
 - **Adapters are the Plugs:** We connect "adapters" to these ports to interact with the outside world.
 
-* An **HTTP Controller** (`/src/controllers`) is an adapter that translates an incoming web request into a call to our core logic.
+   - An **HTTP Controller** (`/src/controllers`) is an adapter that translates an incoming web request into a call to our core logic.
 
-* A **Database Connector** (`/src/connectors`) is an adapter that implements how our core logic talks to a specific database like PostgreSQL.
+   - A **Database Connector** (`/src/connectors`) is an adapter that implements how our core logic talks to a specific database like PostgreSQL.
 
 This approach is reflected in both our Node.js server structure and our Docker setup. The docker-compose.yml file treats the database and the server as separate, swappable components (adapters), while the Node.js code in the src folder keeps business logic (services) cleanly separated from the delivery mechanism (routes, controllers).
 
@@ -137,6 +137,12 @@ This is useful when you are actively working on the Node.js server and want fast
 
 - **Centralized Configuration:** Any specific configuration for a part of the `node_server` (e.g., Swagger options, CORS settings) should be defined in its own file within the `src/config/` directory. This keeps our main `app.ts` clean and makes configuration easy to find.
 
+- **Barrel Exports (index.ts):** Inside each directory (`controllers`, `services`, etc.), there is an `index.ts` file. This file exports all the contents of its sibling files. This allows for cleaner imports elsewhere in the project.
+
+   - Bad: `import { UserController } from '../controllers/userController'`;
+
+   - Good: `import { UserController } from '../controllers'`;
+
 - **Connectors for External Services:** As part of our Hexagonal Architecture, the `src/connectors/` directory is where we place our "adapters" for external services. These are responsible for the specific logic of connecting to and communicating with things like our database or AWS S3. We use the **Singleton Pattern** in these connectors to ensure we only ever have one connection instance to these services, which is efficient and prevents resource leaks.
 
   - **Example 1: Database Connector (`database.ts`)** This file provides a singleton instance for both the Sequelize ORM and the native `pg` client.
@@ -198,9 +204,9 @@ We use Swagger for dynamic API documentation. It is not optional.
 - **New Endpoint Groups:** If you create a new group of related endpoints (e.g., for "Products"), create a new corresponding documentation file (e.g., productDocs.yaml) inside `node_server/src/docs/` and ensure it's loaded by the Swagger config.
 
 
-### **🧪 Testing is Mandatory**
+### **🧪 Testing Strategy**
 
-**There is no exception to this rule.**
+🚨🚨🚨**Testing is Mandatory. There is no exception to this rule.** 🚨🚨🚨
 
 - **All new code requires tests.** This includes bug fixes, new features, and refactors. A ticket or Jira story is not "done" until it is accompanied by meaningful tests.
 
@@ -208,4 +214,109 @@ We use Swagger for dynamic API documentation. It is not optional.
 
 - **Provide Evidence:** When you complete a task, you must attach evidence of your new developed feature, bug, etc, to the Jira ticket. This proves your changes work as expected and are protected against future regressions.
 
-Happy coding!
+A robust testing strategy is non-negotiable for maintaining a high-quality codebase. We employ a combination of unit and integration tests.
+
+#### **Unit vs. Integration Tests**
+* **Unit Tests**: These are fast, isolated tests that check a single piece of logic (e.g., one function in a service) without any external dependencies. They do not connect to a database or make network requests. 🚨**All calls to other parts of the code should be mocked**🚨
+
+* **Integration Tests**: These are end-to-end tests that verify how multiple parts of the system work together. For example, they make real HTTP requests to your endpoints and interact with a real, isolated test database to ensure the entire flow is working correctly.
+
+#### **Node.js Server Testing**
+
+All tests live inside the `src/tests/` directory, which is organized as follows:
+
+- `src/tests/unit/:` Contains all unit tests.
+
+- `src/tests/integration/:` Contains all integration tests.
+
+Integration tests will point to a test database. This is defined by the `NODE_ENV` variable. Unit tests don't need to have this flag set as there shouldn't be any actual call to external resource (it violets the idea of a unit test).
+
+```
+#package.json
+  ...
+  "scripts": {
+    "build": "rimraf ./build && tsc",
+    "start": "node build/index.js",
+    "dev": "nodemon src/index.ts",
+    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:unit": "jest --config jest.config.unit.ts",
+    "test:integration": "cross-env NODE_ENV=test jest --config jest.config.integration.ts --runInBand --detectOpenHandles",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:unit:watch": "jest --config jest.config.unit.ts --watch",
+    "test:integration:watch": "cross-env NODE_ENV=test jest --config jest.config.integration.ts --watch",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand"
+  },
+...
+```
+
+#### Jest Configuration Strategy
+
+To handle the different requirements of unit and integration tests, this project uses a multi-config "Projects" setup in Jest. This is a best practice that keeps our testing workflow efficient, organized, and easy to maintain.
+
+Instead of a single configuration file, we have four:
+
+1. **`jest.config.base.ts` (The Foundation)** This file contains all the common settings that are shared across all types of tests. This includes things like the test environment (`ts-jest`), code coverage settings, and mocks. This ensures our configuration is DRY (Don't Repeat Yourself).
+
+2. **`jest.config.unit.ts` (The Sprinter)** This configuration inherits all the settings from `jest.config.base.ts` and adds one key rule: `testMatch: ['**/tests/unit/**/*.test.ts']`. Its only job is to find and run the fast, isolated unit tests. It does **not** run the database setup script.
+
+3. **`jest.config.integration.ts` (The Marathon Runner)** This also inherits from the base configuration. It sets its own `testMatch` to run only integration tests and, crucially, adds the `setupFilesAfterEnv` property. This command tells Jest to run our `src/tests/setup.ts` script before the tests, which connects to the test database, syncs the tables, and prepares the environment.
+
+4. **`jest.config.ts` (The Orchestrator)** This is the main configuration file that Jest finds by default. It contains no test rules itself. Its only job is to tell Jest about the other "projects" (unit and integration).
+
+This setup allows our `package.json` scripts to work efficiently:
+
+- When you run `npm run test:unit`, you are telling Jest: "Ignore everything else and use only the rules in `jest.config.unit.ts`." This is why it's so fast.
+
+- When you run `npm run test:integration`, you are telling Jest: "Ignore everything else and use only the rules in `jest.config.integration.ts`," which correctly sets up the database.
+
+- When you run the main `npm test` command, you are telling Jest: "Use the orchestrator (`jest.config.ts`), which will run _both_ the unit and integration test projects sequentially." This is the command used for final validation before committing code.
+
+#### The `setup.ts` Script
+
+A key part of our integration testing strategy is the `src/tests/setup.ts` file.
+- **What is it?** This is a special script that our integration test configuration (`jest.config.integration.ts`) is instructed to run once before executing any test files.
+
+- **What does it do?** Its job is to prepare the entire testing environment and ensure it's clean and predictable. It handles several critical tasks:
+
+  1. **Connects** to the dedicated test database.
+
+  2. **Syncs** all Sequelize models, creating the necessary tables (`beforeAll`).
+
+  3. **Wipes all data** from all tables before each individual test runs (`beforeEach`). This is the most important step, as it guarantees that your tests are completely isolated and one test cannot affect the outcome of another.
+
+  4. **Disconnects** cleanly from the database after all tests have finished (`afterAll`).
+
+- **Why is it only for integration tests?** Running this setup script involves slow I/O operations (network connections, database queries). Unit tests are designed to be lightning-fast and run in complete isolation without any external dependencies. Forcing every unit test to wait for a database connection and cleanup would be incredibly inefficient and would completely defeat the purpose of having fast, separate unit tests. This is why our `jest.config.unit.ts` intentionally ignores this setup file
+
+#### Naming Convention and Redundancy
+To keep our tests organized and easy to identify, we use a specific naming convention:
+
+- Unit tests end in `.unit.test.ts` (e.g., `userService.unit.test.ts`).
+
+- Integration tests end in `.integration.test.ts` (e.g., `user.integration.test.ts`).
+
+While it might seem redundant to have both a folder (`/unit`) and a filename convention (`.unit.test.ts`), this is an intentional best practice. It provides clarity at a glance, makes it trivial to search for specific types of tests, and gives us flexibility in how we organize our test files in the future.
+
+#### Code Coverage
+Code coverage is a report that tells you what percentage of your code is being executed by your tests. It's an essential tool for identifying untested parts of your application.
+
+To generate a coverage report, run:
+```
+npm run test:coverage
+```
+This will create a `coverage/` folder. Open the `coverage/lcov-report/index.html` file in your browser to see a detailed, line-by-line report.
+
+#### Running Tests: Speed vs. Thoroughness
+We have different test scripts optimized for different phases of development:
+
+- `npm run test:integration` or `npm run unit:integration`(The "Final Exam"): This is the script you run before you commit your code or in your CI/CD pipeline. Its job is to be as strict and thorough as possible. You need it to run serially for stability (`--runInBand`) and to check for resource leaks to keep the app healthy (`--detectOpenHandles`). Speed is less important than correctness here.
+
+- `npm run test:integration:watch` or `npm run test:unit:watch`:  (The "Quick Rehearsal"): This is your development tool. When you're in watch mode, you save a file and want immediate feedback. The top priority is speed. While you still want stability, the extra time `--detectOpenHandles` takes on every single save can be frustrating and slow down your development loop
+
+So, in summary the difference is in this two flags:
+
+- `--runInBand`: This forces Jest to run all tests serially (one after another) in the same process. **This is crucial for integration tests because they often share a single resource** (like the test database connection), and running them in parallel could cause them to interfere with each other.
+
+- `--detectOpenHandles`: This is a powerful debugging tool. After the tests run, it scans for any "handles" (like server ports or database connections) that haven't been properly closed. It's great for finding resource leaks but adds a significant performance overhead, making the tests run noticeably slower.
+
+Now yes, happy coding! :)
