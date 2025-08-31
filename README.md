@@ -2,6 +2,31 @@
 
 Welcome to the project! This document is your guide to understanding, running, and contributing to this application. Please read it carefully to ensure a smooth development process.
 
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+* [🏛️ Core Philosophy & Architecture](#-core-philosophy-architecture)
+* [🚀 Getting Started](#-getting-started)
+   + [Prerequisites](#prerequisites)
+   + [The .env File](#1-configuration-the-env-file)
+   + [⚠️ The Two (or Three) Golden Rules of Configuration](#-the-two-or-three-golden-rules-of-configuration)
+* [🏃 Running the Application](#-running-the-application)
+   + [Running the full application with Docker](#running-the-full-application-with-docker)
+      - [💾 Database Initialization (`init.sql`)](#-database-initialization-initsql)
+   + [Running Node.js Server Locally (For focused backend development)](#running-nodejs-server-locally-for-focused-backend-development)
+* [🛠️ Development Workflow & Best Practices](#-development-workflow-best-practices)
+   + [🏗️ Code Conventions & Structure for Node.js Server](#-code-conventions-structure-for-nodejs-server)
+   + [📚 API Documentation (Swagger) for Node.js Server](#-api-documentation-swagger-for-nodejs-server)
+   + [🧪 Testing Strategy](#-testing-strategy)
+      - [Unit vs. Integration Tests](#unit-vs-integration-tests)
+      - [Node.js Server Testing](#nodejs-server-testing)
+         * [Jest Configuration Strategy](#jest-configuration-strategy)
+         * [The `setup.ts` Script](#the-setupts-script)
+         * [Naming Convention and Redundancy](#naming-convention-and-redundancy)
+         * [Code Coverage](#code-coverage)
+         * [Running Tests: Speed vs. Thoroughness](#running-tests-speed-vs-thoroughness)
+
+<!-- TOC end -->
+
+<!-- TOC --><a name="-core-philosophy-architecture"></a>
 ## **🏛️ Core Philosophy & Architecture**
 
 This project is built with maintainability, scalability, and best practices in mind. We adhere to principles like **SOLID** to ensure our code is understandable, flexible, and robust.
@@ -21,9 +46,10 @@ Our goal is to follow a **Hexagonal Architecture** (also known as Ports and Adap
 
 This approach is reflected in both our Node.js server structure and our Docker setup. The docker-compose.yml file treats the database and the server as separate, swappable components (adapters), while the Node.js code in the src folder keeps business logic (services) cleanly separated from the delivery mechanism (routes, controllers).
 
-
+<!-- TOC --><a name="-getting-started"></a>
 ## **🚀 Getting Started**
 
+<!-- TOC --><a name="prerequisites"></a>
 ### **Prerequisites**
 
 Before you begin, ensure you have the following installed on your machine:
@@ -32,8 +58,8 @@ Before you begin, ensure you have the following installed on your machine:
 
 - [Docker](https://www.docker.com/products/docker-desktop/) and Docker Compose
 
-
-### **1. Configuration: The .env File**
+<!-- TOC --><a name="1-configuration-the-env-file"></a>
+### **The .env File**
 
 All configuration for this project is managed through environment variables. The single source of truth for local development is the .env file. 🚨🚨🚨 HARDCODED VARIABLES WILL NOT BE ACCEPTED IN THE CODE 🚨🚨🚨
 
@@ -44,7 +70,7 @@ All configuration for this project is managed through environment variables. The
 
 2. **Fill in the values:** Open the new .env file and populate the variables with your specific settings (passwords, ports, etc.).
 
-
+<!-- TOC --><a name="-the-two-or-three-golden-rules-of-configuration"></a>
 ### **⚠️ The Two (or Three) Golden Rules of Configuration**
 
 This is the most important section. To add a **new** environment variable, you **MUST** update it in three places. If you miss a step, it will not work.
@@ -67,10 +93,11 @@ This is the most important section. To add a **new** environment variable, you *
 
 3. (For node_server, if necessary) **Add it to the ConfigService:** To maintain architectural purity, **you must never use process.env directly in your application code**. All configuration is managed by a single, reliable service. Add your new variable to the configuration loader in `node_server/src/config/config.ts`. This ensures it's properly typed and accessible throughout the app in a controlled way.
 
-
+<!-- TOC --><a name="-running-the-application"></a>
 ## **🏃 Running the Application**
 
-### **Running the full application with Docker**
+<!-- TOC --><a name="running-the-full-application-with-docker"></a>
+### **Running the Full Application with Docker**
 
 This is the easiest way to run the entire stack, including the database and any other services.
 
@@ -100,6 +127,14 @@ This is the easiest way to run the entire stack, including the database and any 
   docker-compose up --build db_postgres
   ```
 
+<!-- TOC --><a name="-database-initialization-initsql"></a>
+#### 💾 Database Initialization (`init.sql`)
+
+You might wonder how the database gets its tables created the first time. We use a feature built into the official PostgreSQL Docker image. When the PostgreSQL container starts **for the very first time on an empty data volume**, it automatically executes any `.sql` scripts it finds in the `/docker-entrypoint-initdb.d/` directory inside the container. Our `docker-compose.yml` file uses a volume mount to place our local `./database/init.sql` file into that special directory.
+
+This means that all the statements in the `init.sql` script are run automatically to set up the database schema, but only once. To force this script to run again, you must perform a clean restart with `docker-compose down -v`.
+
+<!-- TOC --><a name="running-nodejs-server-locally-for-focused-backend-development"></a>
 ### **Running Node.js Server Locally (For focused backend development)**
 
 This is useful when you are actively working on the Node.js server and want faster feedback.
@@ -128,11 +163,12 @@ This is useful when you are actively working on the Node.js server and want fast
    npm run start
    ```
 
-
+<!-- TOC --><a name="-development-workflow-best-practices"></a>
 ## **🛠️ Development Workflow & Best Practices**
 
 **Follow Existing Patterns:** Before adding new code, take a moment to look at the existing structure. Place your files in the appropriate directories. Name your files, variables, and classes following the conventions you see in the project (e.g., `userController.ts`, `UserService`). Consistency is key to a readable codebase.
 
+<!-- TOC --><a name="-code-conventions-structure-for-nodejs-server"></a>
 ### 🏗️ Code Conventions & Structure for Node.js Server
 
 - **Centralized Configuration:** Any specific configuration for a part of the `node_server` (e.g., Swagger options, CORS settings) should be defined in its own file within the `src/config/` directory. This keeps our main `app.ts` clean and makes configuration easy to find.
@@ -193,6 +229,7 @@ This is useful when you are actively working on the Node.js server and want fast
               : undefined,
         });
 
+<!-- TOC --><a name="-api-documentation-swagger-for-nodejs-server"></a>
 ### **📚 API Documentation (Swagger) for Node.js Server**
 
 We use Swagger for dynamic API documentation. It is not optional.
@@ -203,7 +240,7 @@ We use Swagger for dynamic API documentation. It is not optional.
 
 - **New Endpoint Groups:** If you create a new group of related endpoints (e.g., for "Products"), create a new corresponding documentation file (e.g., productDocs.yaml) inside `node_server/src/docs/` and ensure it's loaded by the Swagger config.
 
-
+<!-- TOC --><a name="-testing-strategy"></a>
 ### **🧪 Testing Strategy**
 
 🚨🚨🚨**Testing is Mandatory. There is no exception to this rule.** 🚨🚨🚨
@@ -216,11 +253,13 @@ We use Swagger for dynamic API documentation. It is not optional.
 
 A robust testing strategy is non-negotiable for maintaining a high-quality codebase. We employ a combination of unit and integration tests.
 
+<!-- TOC --><a name="unit-vs-integration-tests"></a>
 #### **Unit vs. Integration Tests**
 * **Unit Tests**: These are fast, isolated tests that check a single piece of logic (e.g., one function in a service) without any external dependencies. They do not connect to a database or make network requests. 🚨**All calls to other parts of the code should be mocked**🚨
 
 * **Integration Tests**: These are end-to-end tests that verify how multiple parts of the system work together. For example, they make real HTTP requests to your endpoints and interact with a real, isolated test database to ensure the entire flow is working correctly.
 
+<!-- TOC --><a name="nodejs-server-testing"></a>
 #### **Node.js Server Testing**
 
 All tests live inside the `src/tests/` directory, which is organized as follows:
@@ -249,6 +288,7 @@ Integration tests will point to a test database. This is defined by the `NODE_EN
 ...
 ```
 
+<!-- TOC --><a name="jest-configuration-strategy"></a>
 #### Jest Configuration Strategy
 
 To handle the different requirements of unit and integration tests, this project uses a multi-config "Projects" setup in Jest. This is a best practice that keeps our testing workflow efficient, organized, and easy to maintain.
@@ -271,6 +311,7 @@ This setup allows our `package.json` scripts to work efficiently:
 
 - When you run the main `npm test` command, you are telling Jest: "Use the orchestrator (`jest.config.ts`), which will run _both_ the unit and integration test projects sequentially." This is the command used for final validation before committing code.
 
+<!-- TOC --><a name="the-setupts-script"></a>
 #### The `setup.ts` Script
 
 A key part of our integration testing strategy is the `src/tests/setup.ts` file.
@@ -288,6 +329,7 @@ A key part of our integration testing strategy is the `src/tests/setup.ts` file.
 
 - **Why is it only for integration tests?** Running this setup script involves slow I/O operations (network connections, database queries). Unit tests are designed to be lightning-fast and run in complete isolation without any external dependencies. Forcing every unit test to wait for a database connection and cleanup would be incredibly inefficient and would completely defeat the purpose of having fast, separate unit tests. This is why our `jest.config.unit.ts` intentionally ignores this setup file
 
+<!-- TOC --><a name="naming-convention-and-redundancy"></a>
 #### Naming Convention and Redundancy
 To keep our tests organized and easy to identify, we use a specific naming convention:
 
@@ -297,6 +339,7 @@ To keep our tests organized and easy to identify, we use a specific naming conve
 
 While it might seem redundant to have both a folder (`/unit`) and a filename convention (`.unit.test.ts`), this is an intentional best practice. It provides clarity at a glance, makes it trivial to search for specific types of tests, and gives us flexibility in how we organize our test files in the future.
 
+<!-- TOC --><a name="code-coverage"></a>
 #### Code Coverage
 Code coverage is a report that tells you what percentage of your code is being executed by your tests. It's an essential tool for identifying untested parts of your application.
 
@@ -306,6 +349,7 @@ npm run test:coverage
 ```
 This will create a `coverage/` folder. Open the `coverage/lcov-report/index.html` file in your browser to see a detailed, line-by-line report.
 
+<!-- TOC --><a name="running-tests-speed-vs-thoroughness"></a>
 #### Running Tests: Speed vs. Thoroughness
 We have different test scripts optimized for different phases of development:
 
