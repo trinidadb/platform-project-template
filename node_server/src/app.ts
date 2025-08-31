@@ -9,10 +9,9 @@ import os from "os";
 import http from 'http'; // <-- Import http module
 
 import { postgresDbConnector } from "./connectors";
-import { ConfigService, swaggerSpec } from "./config";
+import { ConfigService, swaggerSpec, logger } from "./config";
 import { userRouter } from "./routes";
 import errorHandler from "./middleware/errorHandler";
-
 
 // Request Interface
 export interface Request extends express.Request {
@@ -36,18 +35,18 @@ export class Application {
     postgresDbConnector
       .sync({ force: false })
       .then(() => {
-        console.log("Database synced with models");
+        logger.info("Database synced with models");
         this.server = this.app.listen(ConfigService.getInstance().http.port, () => {
-          console.log(`Server running on http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`);
+          logger.info.log(`Server running on http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`);
         });
       })
       .catch((err) => {
-        console.error("Error syncing database:", err);
+        logger.error("Error synchronising database", { error: err });
       });
   }
 
   public async close(): Promise<void> {
-    console.log("Closing server and database connections...");
+    logger.info("Closing server and database connections...");
     if (this.server) {
       await new Promise<void>((resolve, reject) => {
         this.server.close((err) => {
@@ -68,7 +67,7 @@ export class Application {
           "http://localhost:8080",
           "http://localhost:81",
           "http://212.128.157.197",
-          "http://212.128.157.197:81"
+          "http://212.128.157.197:81",
         ],
         credentials: true,
         methods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
@@ -85,7 +84,6 @@ export class Application {
 
     this.app.use(cookieParser("secretoCookie"));
     this.app.use(compression());
-
   }
 
   private parsers(): void {
@@ -108,7 +106,6 @@ export class Application {
         rolling: true, // Reset session expiration time on every request
       })
     );
-
   }
 
   private routes(): void {

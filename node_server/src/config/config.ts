@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "path";
-
+import { logger } from ".";
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 export class HttpConfig {
@@ -42,7 +42,6 @@ export class PostgresConfig {
   }
 }
 
-
 export class DnsConfig {
   public enabled: boolean;
   public server: string;
@@ -73,7 +72,7 @@ export class Config {
   public https: HttpsConfig;
   public db: PostgresConfig;
   public dns: DnsConfig;
-//  public s3: S3Config;
+  //  public s3: S3Config;
 
   private constructor(configObj: Partial<Config>) {
     this.redirect = configObj.redirect ?? false;
@@ -81,7 +80,7 @@ export class Config {
     this.https = new HttpsConfig(configObj.https);
     this.db = new PostgresConfig(configObj.db);
     this.dns = new DnsConfig(configObj.dns);
-//    this.s3 = new S3Config(configObj.s3);
+    //    this.s3 = new S3Config(configObj.s3);
   }
 
   static loadFromEnv(): Config {
@@ -126,7 +125,9 @@ export class Config {
 
       return new Config(configObj);
     } catch (error) {
-      console.error("[CONFIG] Failed to load config from environment:", error);
+      logger.error("[CONFIG] Failed to load config from environment", {
+        error,
+      });
       return new Config({});
     }
   }
