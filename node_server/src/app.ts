@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import expressSession from "express-session";
 import swaggerUi from "swagger-ui-express";
 import os from "os";
+import http from 'http'; // <-- Import http module
 
 import { postgresDbConnector } from "./connectors";
 import { ConfigService, swaggerSpec } from "./config";
@@ -20,34 +21,42 @@ export interface Request extends express.Request {
 
 export class Application {
   public app: express.Application;
+  private server: http.Server; // <-- Add a server property
 
   constructor() {
     this.app = express();
     this.config();
     this.parsers();
     this.routes();
-    this.setupSwagger(); // Add this line
+    this.setupSwagger();
 
+  }
+
+  public start(): void {
     postgresDbConnector
-      .sync({ force: false }) // `force: false` para no eliminar los datos existentes
+      .sync({ force: false })
       .then(() => {
-        console.log("Base de datos sincronizada con los modelos");
+        console.log("Database synced with models");
+        this.server = this.app.listen(ConfigService.getInstance().http.port, () => {
+          console.log(`Server running on http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`);
+        });
       })
       .catch((err) => {
-        console.error("Error sincronizando base de datos:", err);
+        console.error("Error syncing database:", err);
       });
+  }
 
-    this.app.listen(ConfigService.getInstance().http.port, () => {
-      const networkInterfaces = os.networkInterfaces();
-      const ipAddress =
-        networkInterfaces["eth0"]?.find((iface: any) => iface.family === "IPv4")
-          ?.address || "localhost";
-      console.log(
-        `Server running on http://${ipAddress}:${
-          ConfigService.getInstance().http.port
-        }`
-      );
-    });
+  public async close(): Promise<void> {
+    console.log("Closing server and database connections...");
+    if (this.server) {
+      await new Promise<void>((resolve, reject) => {
+        this.server.close((err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+    }
+    await postgresDbConnector.close();
   }
 
   private config(): void {
@@ -114,3 +123,5 @@ export class Application {
     console.log("Swagger docs available at /api-docs");
   }
 }
+
+export const appInstance = new Application();

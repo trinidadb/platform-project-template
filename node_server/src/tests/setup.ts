@@ -1,5 +1,6 @@
 import { postgresDbConnector } from '../connectors'; // Adjust path if needed
 import { User } from '../models'; // Import all your models
+import { appInstance } from '../app'; // Adjust path if needed
 
 // Increase Jest's default timeout for database operations
 jest.setTimeout(30000);
@@ -31,7 +32,7 @@ beforeEach(async () => {
 afterAll(async () => {
   // Close the database connection after all tests are done
   try {
-    await postgresDbConnector.close();
+    await appInstance.close();
     console.log('Test database connection closed.');
   } catch (error) {
     console.error('Failed to close test database connection:', error);
