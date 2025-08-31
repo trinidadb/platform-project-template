@@ -37,7 +37,7 @@ export class Application {
       .then(() => {
         logger.info("Database synced with models");
         this.server = this.app.listen(ConfigService.getInstance().http.port, () => {
-          logger.info.log(`Server running on http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`);
+          logger.info(`Server running on http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`);
         });
       })
       .catch((err) => {
