@@ -86,6 +86,8 @@ export class Config {
 
   static loadFromEnv(): Config {
     try {
+      const isTestEnv = process.env.NODE_ENV === 'test';
+
       const configObj: Partial<Config> = {
         redirect: process.env.REDIRECT === "true",
         http: {
@@ -106,11 +108,9 @@ export class Config {
         db: {
           user: process.env.POSTGRES_USER,
           password: process.env.POSTGRES_PASSWORD,
-          host: process.env.POSTGRES_HOST,
-          port: process.env.POSTGRES_PORT
-            ? Number(process.env.POSTGRES_PORT)
-            : undefined,
-          database: process.env.POSTGRES_DB,
+          host: isTestEnv ? process.env.POSTGRES_TEST_HOST : process.env.POSTGRES_HOST,
+          port: isTestEnv ? Number(process.env.POSTGRES_TEST_PORT) : Number(process.env.POSTGRES_PORT),
+          database: isTestEnv ? `${process.env.POSTGRES_DB}_test` : process.env.POSTGRES_DB,
         },
         dns: {
           enabled: process.env.DNS_ENABLED === "true",
