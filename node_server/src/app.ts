@@ -109,7 +109,6 @@ export class Application {
   }
 
   private routes(): void {
-    // Authentication routes
     this.app.use("/users", userRouter);
 
     this.app.use(errorHandler); // capturamos todos los errores de la aplicación
