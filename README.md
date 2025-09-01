@@ -20,6 +20,15 @@ Welcome to the project! This document is your guide to understanding, running, a
     - [**Frontend: Vue.js Application**](#frontend-vuejs-application)
       - [**🎨 Architecture \& Philosophy**](#-architecture--philosophy)
       - [**📁 Folder Structure**](#-folder-structure)
+      - [**📄 Code Conventions**](#-code-conventions)
+      - [**📜 Available Scripts**](#-available-scripts)
+    - [**🧪 Testing Strategy**](#-testing-strategy)
+      - [**Unit vs. Integration Tests**](#unit-vs-integration-tests)
+      - [**Node.js Server Testing**](#nodejs-server-testing)
+      - [Jest Configuration Strategy](#jest-configuration-strategy)
+      - [The `setup.ts` Script](#the-setupts-script)
+      - [Naming Convention and Redundancy](#naming-convention-and-redundancy)
+      - [Code Coverage](#code-coverage)
       - [Running Tests: Speed vs. Thoroughness](#running-tests-speed-vs-thoroughness)
 
 <!-- TOC end -->
@@ -345,7 +354,7 @@ The frontend is a **Vue 3** application built with **Vite**, designed following 
 #### **📁 Folder Structure**
 The `frontend/src` directory is organized by responsibility:
 
-´´´
+```
 frontend/src/
 ├── 📁assets/       # Global styles (base.css), images, fonts
 ├── 📁components/   # Reusable Vue components (buttons, tables, forms)
