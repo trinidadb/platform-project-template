@@ -338,15 +338,18 @@ We use Swagger for dynamic API documentation. It is not optional.
 ### **Frontend: Vue.js Application**
 
 #### **🎨 Architecture & Philosophy**
-The frontend is a **Vue 3** application built with **Vite**. It follows a clear and scalable architecture based on the principle of **Separation of Concerns**.
+The frontend is a **Vue 3** application built with **Vite**, designed following the core principle of **Separation of Concerns**. This modular architecture ensures that the application is scalable, maintainable, and easy to debug by isolating different aspects of the application into distinct layers.
 
-We use a "Restaurant" analogy to understand the structure:
-- **The Kitchen (Logic & Data):** This is where data is prepared, far from the user's view.
-    - **`services/api.js` (The Chef):** This is the only part of the app that communicates with the backend API. It isolates all HTTP request logic.
-    - **`store/userStore.js` (The Head Chef):** This is the central brain for a specific feature (like users). It manages the application's **state** (the data), calls the service to fetch data, and provides it to the components. We use **Pinia** for state management.
-- **The Dining Room (Visual Layer):** This is what the user sees and interacts with.
-    - **`views/` (The Pages):** These are the main pages of the application, like the Dashboard or the User Management screen. They orchestrate which components to show.
-    - **`components/` (The Reusable Parts):** These are the building blocks, like tables, forms, and buttons (`UserTable.vue`, `UserForm.vue`). They receive data via **props** and communicate actions via **emits**. They are kept as "dumb" as possible, only responsible for displaying information.
+- **Service Layer (`services/`):** This is the application's data access layer. Its sole responsibility is to manage all communication with the backend API. It abstracts the complexities of HTTP requests (using `axios`) and exposes simple, promise-based functions (e.g., `getUsers()`, `createUser()`). This decouples the core application logic from the specific API implementation.
+
+- **State Management Layer (`store/`):** This layer acts as the **Single Source of Truth (SSoT)** for the application's shared state. We use **Pinia** to create modular stores for different domains (e.g., `userStore`). The store is responsible for:
+    - Holding the application's reactive data (e.g., the list of users).
+    - Containing the business logic to manipulate that data (e.g., functions to create or delete a user).
+    - Calling the **Service Layer** to fetch or persist data.
+
+- **Presentation Layer (`views/` & `components/`):** This is the visual part of the application that the user interacts with. It is further divided into two categories:
+    - **View Components (`views/`):** These are "smart" or container components, typically tied to a specific route (e.g., `/dashboard`). Their main role is to orchestrate the display of data by fetching it from the **State Management Layer** and passing it down to reusable UI components.
+    - **Reusable UI Components (`components/`):** These are "dumb" or presentational components (e.g., `UserTable.vue`, `UserForm.vue`). Their only responsibility is to display data they receive via **props** and to communicate user interactions back to their parent view via **emits**. They are kept agnostic of the application's state and business logic, making them highly reusable.
 
 #### **📁 Folder Structure**
 The `frontend/src` directory is organized by responsibility:
