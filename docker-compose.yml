@@ -1,0 +1,81 @@
+services:
+  postgres_db:
+    image: "postgres:15" # Best practice: Pin to a specific major version, not 'latest'
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_DOCKER_PORT}
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - platform-net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 20s
+      retries: 5
+      start_period: 30s
+
+  postgres_test_db:
+    image: "postgres:15"
+    profiles: ["test"]   # container built only when profile 'test' is active
+    container_name: ${POSTGRES_CONTAINER_NAME}_test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}_test
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_TEST_PORT}:${POSTGRES_DOCKER_PORT}"
+    networks:
+      - platform-net
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    # No healthcheck needed for the test DB, our tests will manage the connection
+
+
+  server:
+    build: ./node_server # Build the Docker image from the server directory
+    container_name: ${SERVER_CONTAINER_NAME}
+    ports:
+      - ${HTTP_PORT}:${HTTP_PORT}
+      - ${HTTPS_PORT}:${HTTPS_PORT}
+    environment:
+      - NODE_ENV=development
+      - DNS_ENABLED=${DNS_ENABLED}
+      - DNS_SERVER=${DNS_SERVER}
+      - POSTGRES_HOST=${POSTGRES_CONTAINER_NAME}
+      - POSTGRES_PORT=${POSTGRES_DOCKER_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_TEST_HOST=${POSTGRES_CONTAINER_NAME}_test
+      - HTTP_PORT=${HTTP_PORT}
+      - HTTP_BIND=${HTTP_BIND}
+      - HTTPS_PORT=${HTTPS_PORT}
+      - HTTPS_BIND=${HTTPS_BIND}
+      - HTTPS_KEY_FILE=${HTTPS_KEY_FILE}
+      - HTTPS_CERT_FILE=${HTTPS_CERT_FILE}
+      - HTTPS_CA_FILE=${HTTPS_CA_FILE}
+    depends_on:
+      postgres_db:
+        condition: service_healthy # Ensure the database is ready before starting the server
+    networks:
+      - platform-net
+
+networks:
+  platform-net:
+    driver: bridge
+
+
+volumes: # Compose needs to know whether a named volume is something it should create/manage or something that already exists outside the project
+  postgres_data:
+  postgres_test_data:
+
+# This command stops and removes containers, networks, AND volumes
+# docker-compose down -v
