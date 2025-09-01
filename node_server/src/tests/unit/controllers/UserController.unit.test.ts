@@ -4,10 +4,11 @@ import { logger } from "../../../config";
 import { UserController } from "../../../controllers";
 
 // service mock
-jest.mock("../../src/services/user.service");
+jest.mock("../../../services/userService");
 
 // logger mock
-jest.mock("../../src/utils/logger", () => ({
+jest.mock("../../../config/logger", () => ({
+  info: jest.fn(),
   error: jest.fn(),
 }));
 

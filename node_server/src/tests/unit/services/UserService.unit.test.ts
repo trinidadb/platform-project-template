@@ -1,9 +1,7 @@
 import { User } from "../../../models";
 import { UserService } from "../../../services";
 
-jest.mock("../../src/models/user", () => ({
-  User: { findAll: jest.fn() },
-}));
+jest.mock("../../../models/user");
 
 // Simple utility to validate ISO 8601 in timestamps
 const ISO8601_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -11,7 +9,7 @@ const ISO8601_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 describe("UserService.get_all", () => {
   afterEach(() => jest.clearAllMocks());
 
-  test("devuelve usuarios con el shape esperado", async () => {
+  test("return users", async () => {
     const mockUsers = [
       {
         id: "994fc575-dc38-4718-9fc5-6a23c0ae0832",
