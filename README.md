@@ -3,26 +3,33 @@
 Welcome to the project! This document is your guide to understanding, running, and contributing to this application. Please read it carefully to ensure a smooth development process.
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
-* [🏛️ Core Philosophy & Architecture](#-core-philosophy-architecture)
-* [🚀 Getting Started](#-getting-started)
-   + [Prerequisites](#prerequisites)
-   + [The .env File](#1-configuration-the-env-file)
-   + [⚠️ The Two (or Three) Golden Rules of Configuration](#-the-two-or-three-golden-rules-of-configuration)
-* [🏃 Running the Application](#-running-the-application)
-   + [Running the full application with Docker](#running-the-full-application-with-docker)
+- [ID-Back-Front-Project-Template](#id-back-front-project-template)
+  - [**🏛️ Core Philosophy \& Architecture**](#️-core-philosophy--architecture)
+  - [**🚀 Getting Started**](#-getting-started)
+    - [**Prerequisites**](#prerequisites)
+    - [**The .env File**](#the-env-file)
+    - [**⚠️ The Two (or Three) Golden Rules of Configuration**](#️-the-two-or-three-golden-rules-of-configuration)
+  - [**🏃 Running the Application**](#-running-the-application)
+    - [**Running the Full Application with Docker**](#running-the-full-application-with-docker)
       - [💾 Database Initialization (`init.sql`)](#-database-initialization-initsql)
-   + [Running Node.js Server Locally (For focused backend development)](#running-nodejs-server-locally-for-focused-backend-development)
-* [🛠️ Development Workflow & Best Practices](#-development-workflow-best-practices)
-   + [🏗️ Code Conventions & Structure for Node.js Server](#-code-conventions-structure-for-nodejs-server)
-   + [📚 API Documentation (Swagger) for Node.js Server](#-api-documentation-swagger-for-nodejs-server)
-   + [🧪 Testing Strategy](#-testing-strategy)
-      - [Unit vs. Integration Tests](#unit-vs-integration-tests)
-      - [Node.js Server Testing](#nodejs-server-testing)
-         * [Jest Configuration Strategy](#jest-configuration-strategy)
-         * [The `setup.ts` Script](#the-setupts-script)
-         * [Naming Convention and Redundancy](#naming-convention-and-redundancy)
-         * [Code Coverage](#code-coverage)
-         * [Running Tests: Speed vs. Thoroughness](#running-tests-speed-vs-thoroughness)
+    - [**Running Node.js Server Locally (For focused backend development)**](#running-nodejs-server-locally-for-focused-backend-development)
+    - [**Running the Frontend Locally**](#running-the-frontend-locally)
+  - [**🛠️ Development Workflow \& Best Practices**](#️-development-workflow--best-practices)
+    - [🏗️ Code Conventions \& Structure for Node.js Server](#️-code-conventions--structure-for-nodejs-server)
+    - [**📚 API Documentation (Swagger) for Node.js Server**](#-api-documentation-swagger-for-nodejs-server)
+    - [**Frontend: Vue.js Application**](#frontend-vuejs-application)
+      - [**🎨 Architecture \& Philosophy**](#-architecture--philosophy)
+      - [**📁 Folder Structure**](#-folder-structure)
+      - [**📄 Code Conventions**](#-code-conventions)
+      - [**📜 Available Scripts**](#-available-scripts)
+    - [**🧪 Testing Strategy**](#-testing-strategy)
+      - [**Unit vs. Integration Tests**](#unit-vs-integration-tests)
+      - [**Node.js Server Testing**](#nodejs-server-testing)
+      - [Jest Configuration Strategy](#jest-configuration-strategy)
+      - [The `setup.ts` Script](#the-setupts-script)
+      - [Naming Convention and Redundancy](#naming-convention-and-redundancy)
+      - [Code Coverage](#code-coverage)
+      - [Running Tests: Speed vs. Thoroughness](#running-tests-speed-vs-thoroughness)
 
 <!-- TOC end -->
 
@@ -232,6 +239,24 @@ This is useful when you are actively working on the Node.js server and want fast
    ```
    npm run start
    ```
+   
+### **Running the Frontend Locally**
+This is useful when you are actively working on the user interface and want the fastest feedback with Hot Module Replacement (HMR).
+
+1.  **Navigate to the frontend directory:**
+    ```bash
+    cd frontend
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Run in Development Mode:**
+    This uses Vite to start a development server that watches for file changes and instantly updates the browser.
+    ```bash
+    npm run dev
+    ```
+    The application will typically be available at `http://localhost:5173`.
 
 <!-- TOC --><a name="-development-workflow-best-practices"></a>
 ## **🛠️ Development Workflow & Best Practices**
@@ -309,6 +334,42 @@ We use Swagger for dynamic API documentation. It is not optional.
 - **The Rule:** If you add or modify an API endpoint in the `/routes` directory, you **MUST** update the corresponding documentation in the `/docs` directory.
 
 - **New Endpoint Groups:** If you create a new group of related endpoints (e.g., for "Products"), create a new corresponding documentation file (e.g., productDocs.yaml) inside `node_server/src/docs/` and ensure it's loaded by the Swagger config.
+
+### **Frontend: Vue.js Application**
+
+#### **🎨 Architecture & Philosophy**
+The frontend is a **Vue 3** application built with **Vite**. It follows a clear and scalable architecture based on the principle of **Separation of Concerns**.
+
+We use a "Restaurant" analogy to understand the structure:
+- **The Kitchen (Logic & Data):** This is where data is prepared, far from the user's view.
+    - **`services/api.js` (The Chef):** This is the only part of the app that communicates with the backend API. It isolates all HTTP request logic.
+    - **`store/userStore.js` (The Head Chef):** This is the central brain for a specific feature (like users). It manages the application's **state** (the data), calls the service to fetch data, and provides it to the components. We use **Pinia** for state management.
+- **The Dining Room (Visual Layer):** This is what the user sees and interacts with.
+    - **`views/` (The Pages):** These are the main pages of the application, like the Dashboard or the User Management screen. They orchestrate which components to show.
+    - **`components/` (The Reusable Parts):** These are the building blocks, like tables, forms, and buttons (`UserTable.vue`, `UserForm.vue`). They receive data via **props** and communicate actions via **emits**. They are kept as "dumb" as possible, only responsible for displaying information.
+
+#### **📁 Folder Structure**
+The `frontend/src` directory is organized by responsibility:
+
+frontend/src/
+├── assets/       # Global styles (base.css), images, fonts
+├── components/   # Reusable Vue components (buttons, tables, forms)
+├── router/       # Vue Router configuration (defines URL paths)
+├── services/     # API communication layer (api.js)
+├── store/        # Pinia state management stores (userStore.js)
+└── views/        # Page-level components (DashboardView.vue, AdminHome.vue)
+
+#### **📄 Code Conventions**
+- **JSDoc for Documentation:** All key functions (store actions, API service methods) and component APIs (`props` and `emits`) are documented using **JSDoc**. This enables editor autocompletion and makes the code easier to understand.
+- **Scoped CSS:** Components use `<style scoped>` to ensure their styles are encapsulated and do not leak out to affect other parts of the application.
+- **CSS Variables:** Global design tokens (colors, fonts) are defined as CSS variables in `src/assets/base.css` for easy theming and consistency.
+
+#### **📜 Available Scripts**
+Inside the `frontend/` directory, you can run the following commands:
+- `npm run dev`: Starts the Vite development server with Hot Module Replacement. Use this for active development.
+- `npm run build`: Compiles and minifies the application for production. This creates a `/dist` folder with the final static files.
+- `npm run preview`: Starts a simple local server to preview the production build from the `/dist` folder. Use this to test the final version before deployment.
+- `npm run format`: Runs Prettier to automatically format all code files, ensuring a consistent style across the project.
 
 <!-- TOC --><a name="-testing-strategy"></a>
 ### **🧪 Testing Strategy**
