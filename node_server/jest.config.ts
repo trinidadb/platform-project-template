@@ -1,14 +1,16 @@
-export default {
-  preset: "ts-jest",
-  testEnvironment: "node",
-  testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
-  clearMocks: true, // Limpia los mocks automáticamente después de cada test
+import type { Config } from 'jest';
 
-  // --- Added for Code Coverage ---
-  coverageProvider: "v8",
-  collectCoverageFrom: [
-    "src/**/*.ts",
-    "!src/index.ts", //  Exclude the main entry point
-    "!src/config/**", // and config files
+/**
+ * This is the main Jest configuration file.
+ * It uses the "projects" feature to run different test suites
+ * with completely separate configurations.
+ */
+const config: Config = {
+  // A list of paths to the configuration files for each test project.
+  projects: [
+    '<rootDir>/jest.config.unit.ts',
+    '<rootDir>/jest.config.integration.ts',
   ],
 };
+
+export default config;
