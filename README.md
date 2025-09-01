@@ -355,13 +355,14 @@ The frontend is a **Vue 3** application built with **Vite**, designed following 
 The `frontend/src` directory is organized by responsibility:
 
 ```
-frontend/src/
-├── 📁assets/       # Global styles (base.css), images, fonts
-├── 📁components/   # Reusable Vue components (buttons, tables, forms)
-├── 📁router/       # Vue Router configuration (defines URL paths)
-├── 📁services/     # API communication layer (api.js)
-├── 📁store/        # Pinia state management stores (userStore.js)
-└── 📁views/        # Page-level components (DashboardView.vue, AdminHome.vue)
+📁frontend/
+|__ 📁src/
+    |__ 📁assets/       # Global styles (base.css), images, fonts
+    |__ 📁components/   # Reusable Vue components (buttons, tables, forms)
+    |__ 📁router/       # Vue Router configuration (defines URL paths)
+    |__ 📁services/     # API communication layer (api.js)
+    |__ 📁store/        # Pinia state management stores (userStore.js)
+    |__ 📁views/        # Page-level components (DashboardView.vue, AdminHome.vue)
 ```
 
 #### **📄 Code Conventions**
