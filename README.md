@@ -29,11 +29,45 @@ Welcome to the project! This document is your guide to understanding, running, a
 <!-- TOC --><a name="-core-philosophy-architecture"></a>
 ## **🏛️ Core Philosophy & Architecture**
 
-This project is built with maintainability, scalability, and best practices in mind. We adhere to principles like **SOLID** to ensure our code is understandable, flexible, and robust.
+The repo structure is the following:
+```
+|__ 📁 database
+    |__ init.sql
+|__ 📁 node_server
+    |__ 📁 src
+        |__ 📁 config
+        |__ 📁 connectors
+        |__ 📁 controllers
+        |__ 📁 docs
+        |__ 📁 middleware
+        |__ 📁 models
+        |__ 📁 routes
+        |__ 📁 services
+        |__ 📁 tests
+        |__ 📁 utils
+        |__ app.ts
+        |__ index.ts
+    |__ dockerfile
+    |__ jest.config.base.ts
+    |__ jest.config.integration.ts
+    |__ jest.config.ts
+    |__ jest.config.unit.ts
+    |__ nodemon.json
+    |__ package-lock.json
+    |__ package.json
+    |__ tsconfig.json
+|__ .env
+|__ .env.example
+|__ .gitignore
+|__ docker-compose.yml
+|__ README.md
+```
 
-Our goal is to follow a **Hexagonal Architecture** (also known as Ports and Adapters). Here's what that means for you in simple terms:
+The project was built with maintainability, scalability, and best practices in mind. We adhere to principles like **SOLID** to ensure our code is understandable, flexible, and robust.
 
-- **The Core Logic is Independent:** The heart of our application (the business rules, found in the /src/services directory) has no knowledge of the outside world. It doesn't know about our database, any external APIs, or even that it's being accessed via HTTP. It's pure, testable logic.
+Our goal was to follow a **Hexagonal Architecture** (also known as Ports and Adapters). Here's what that means in simple terms:
+
+- **The Core Logic is Independent:** The heart of our application (the business rules, found in the `/src/services directory`) has no knowledge of the outside world. It doesn't know about our database, any external APIs, or even that it's being accessed via HTTP. It's pure, testable logic.
 
 
 - **Ports are the Gates:** The core logic defines "ports" (interfaces or abstract classes) through which it communicates.
