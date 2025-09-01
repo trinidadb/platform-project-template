@@ -12,11 +12,7 @@ export class UserService {
    * @returns all users
    */
   static async get_all() {
-    try {
-      return await User.findAll();
-    } catch (err: any) {
-      throw mapSequelizeError(err);
-    }
+    return await User.findAll(); // Returns or throws, and the middleware takes care of it.
   }
 
   /**
@@ -30,15 +26,11 @@ export class UserService {
    */
 
   static async get_user_by_id(id: string) {
-    try {
-      const user = await User.findByPk(id);
-      if (!user) {
-        throw new AppError("User not found.", 404);
-      }
-      return user;
-    } catch (err: any) {
-      throw mapSequelizeError(err);
+    const user = await User.findByPk(id);
+    if (!user) {
+      throw new AppError("User not found", 404);
     }
+    return user;
   }
 
   /**
