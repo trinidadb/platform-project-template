@@ -5,6 +5,35 @@ import { mapSequelizeError } from "../utils/sequelizeErrorMapper";
 
 export class UserService {
   /**
+   * Returns all users
+   *
+   * This method returns all users of the database
+   *
+   * @returns all users
+   */
+  static async get_all() {
+    return await User.findAll(); // Returns or throws, and the middleware takes care of it.
+  }
+
+  /**
+   * Returns a user
+   *
+   * This method returns the user with the specified ID
+   *
+   * @params id string
+   *
+   * @returns the user with the specified ID
+   */
+
+  static async get_user_by_id(id: string) {
+    const user = await User.findByPk(id);
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    return user;
+  }
+
+  /**
    * Create a new user
    *
    * This method creates a user in the database
@@ -25,7 +54,7 @@ export class UserService {
 
       return user;
     } catch (err) {
-      throw mapSequelizeError(err);
+      throw err;
     }
   }
 
@@ -59,11 +88,11 @@ export class UserService {
       }
       return user;
     } catch (err) {
-      throw mapSequelizeError(err);
+      throw err;
     }
   }
 
-    /**
+  /**
    * Delete user
    *
    * This method deletes an existing user
@@ -83,7 +112,7 @@ export class UserService {
         id: userToDelete.getDataValue("id"),
       };
     } catch (err: any) {
-      throw mapSequelizeError(err);
+      throw err;
     }
   }
 }

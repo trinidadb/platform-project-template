@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import expressSession from "express-session";
 import swaggerUi from "swagger-ui-express";
 import os from "os";
-import http from 'http'; // <-- Import http module
+import http from "http"; // <-- Import http module
 
 import { postgresDbConnector } from "./connectors";
 import { ConfigService, swaggerSpec, logger } from "./config";
@@ -28,7 +28,6 @@ export class Application {
     this.parsers();
     this.routes();
     this.setupSwagger();
-
   }
 
   public start(): void {
@@ -36,9 +35,16 @@ export class Application {
       .sync({ force: false })
       .then(() => {
         logger.info("Database synced with models");
-        this.server = this.app.listen(ConfigService.getInstance().http.port, () => {
-          logger.info(`Server running on http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`);
-        });
+        this.server = this.app.listen(
+          ConfigService.getInstance().http.port,
+          () => {
+            logger.info(
+              `Server running on http://${
+                ConfigService.getInstance().http.bind
+              }:${ConfigService.getInstance().http.port}`
+            );
+          }
+        );
       })
       .catch((err) => {
         logger.error("Error synchronising database", { error: err });

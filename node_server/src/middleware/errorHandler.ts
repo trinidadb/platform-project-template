@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import AppError from "../utils/appError"; // Importa la clase creada
+import { mapSequelizeError } from "../utils/sequelizeErrorMapper";
+import { logger } from "../config";
 
 const errorHandler = (
   err: any,
@@ -7,14 +9,15 @@ const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  if (!(err instanceof AppError)) {
-    err = new AppError("Internal Server Error", 500, false);
-  }
+  const mappedError: AppError = mapSequelizeError(err);
 
-  res.status(err.statusCode).json({
-    success: false,
-    message: err.message,
+  logger.error({
+    message: mappedError.message,
   });
+
+  res
+    .status(mappedError.statusCode)
+    .json({ success: false, message: mappedError.message });
 };
 
 export default errorHandler;
