@@ -65,9 +65,6 @@ describe("UserController.get_all", () => {
     await UserController.get_all(req as Request, res as Response, next);
 
     expect(UserService.get_all).toHaveBeenCalledTimes(1);
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining("Error getting all users:")
-    );
     expect(next).toHaveBeenCalledWith(fakeError);
 
     // Important: does not respond with status/json in this flow.

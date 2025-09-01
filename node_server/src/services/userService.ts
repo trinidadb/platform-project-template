@@ -54,7 +54,7 @@ export class UserService {
 
       return user;
     } catch (err) {
-      throw mapSequelizeError(err);
+      throw err;
     }
   }
 
@@ -88,7 +88,7 @@ export class UserService {
       }
       return user;
     } catch (err) {
-      throw mapSequelizeError(err);
+      throw err;
     }
   }
 
@@ -112,7 +112,7 @@ export class UserService {
         id: userToDelete.getDataValue("id"),
       };
     } catch (err: any) {
-      throw mapSequelizeError(err);
+      throw err;
     }
   }
 }
