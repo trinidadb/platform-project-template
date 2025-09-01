@@ -1,14 +1,14 @@
-// /frontend/src/main.js
-import Vue from "vue";
-import App from "./App.vue";
-import router from "./router";
-import axios from "axios";
+// src/main.js
+import './assets/base.css'
 
-Vue.config.productionTip = false;
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
+import router from './router'
 
-Vue.prototype.$http = axios; // configure axios globally
+const app = createApp(App)
 
-new Vue({
-  render: (h) => h(App),
-  router,
-}).$mount("#app");
+app.use(createPinia())
+app.use(router)
+
+app.mount('#app')
