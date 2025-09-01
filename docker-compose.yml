@@ -68,6 +68,27 @@ services:
     networks:
       - platform-net
 
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - FRONTEND_PORT=${FRONTEND_PORT} # You can't directly pass environment variables from the environment section of your docker-compose.yml to the Dockerfile during the build process. The environment key sets variables for the runtime of the container, not the build-time.
+    container_name: ${FRONTEND_CONTAINER_NAME}
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+    environment:
+      - PORT=${FRONTEND_PORT}
+      - HOST=${FRONTEND_HOST}
+      - HTTP_BIND=${SERVER_CONTAINER_NAME}
+      - HTTP_PORT=${HTTP_PORT}
+      - DNS_ENABLED=${DNS_ENABLED}
+      - DNS_SERVER=${DNS_SERVER}
+    depends_on:
+      - server
+    networks:
+      - platform-net
+
 networks:
   platform-net:
     driver: bridge
