@@ -74,6 +74,7 @@ services:
       context: ./frontend
       args:
         - FRONTEND_PORT=${FRONTEND_PORT} # You can't directly pass environment variables from the environment section of your docker-compose.yml to the Dockerfile during the build process. The environment key sets variables for the runtime of the container, not the build-time.
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     container_name: ${FRONTEND_CONTAINER_NAME}
     ports:
       - ${FRONTEND_PORT}:${FRONTEND_PORT}

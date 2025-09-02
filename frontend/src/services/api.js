@@ -1,5 +1,5 @@
 // src/services/api.js
-import axios from 'axios';
+import axios from 'axios'
 
 /**
  * @module apiClient
@@ -10,9 +10,9 @@ import axios from 'axios';
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json'
-  }
-});
+    'Content-Type': 'application/json',
+  },
+})
 
 /**
  * @module apiService
@@ -26,7 +26,7 @@ export default {
    * @returns {Promise<import('axios').AxiosResponse<Array<object>>>} A promise that resolves to the Axios response containing the array of users.
    */
   getUsers() {
-    return apiClient.get('/');
+    return apiClient.get('/')
   },
 
   /**
@@ -36,7 +36,7 @@ export default {
    * @returns {Promise<import('axios').AxiosResponse<object>>} A promise that resolves to the Axios response containing the user data.
    */
   getUserById(userId) {
-    return apiClient.get(`/${userId}`);
+    return apiClient.get(`/${userId}`)
   },
 
   /**
@@ -46,7 +46,7 @@ export default {
    * @returns {Promise<import('axios').AxiosResponse<object>>} A promise that resolves to the Axios response containing the newly created user.
    */
   createUser(userData) {
-    return apiClient.post('/create', userData);
+    return apiClient.post('/create', userData)
   },
 
   /**
@@ -58,7 +58,7 @@ export default {
    * @returns {Promise<import('axios').AxiosResponse<object>>} A promise that resolves to the Axios response containing the updated user.
    */
   updateUser(userId, userData) {
-    return apiClient.put('/update', { id: userId, ...userData });
+    return apiClient.put('/update', { id: userId, ...userData })
   },
 
   /**
@@ -68,6 +68,6 @@ export default {
    * @returns {Promise<import('axios').AxiosResponse>} A promise that resolves to the Axios response, typically with a success status.
    */
   deleteUser(userId) {
-    return apiClient.post('/delete', { id: userId });
-  }
-};
+    return apiClient.post('/delete', { id: userId })
+  },
+}
