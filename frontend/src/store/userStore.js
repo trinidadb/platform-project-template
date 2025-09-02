@@ -45,7 +45,7 @@ export const useUserStore = defineStore('user', () => {
    */
   const inactiveUsers = computed(() => users.value.filter((user) => !user.active).length)
 
-   // --- ACTIONS ---
+  // --- ACTIONS ---
   /**
    * Fetches the full list of users from the API and populates the state.
    * Sets the loading state during the request.
@@ -54,16 +54,16 @@ export const useUserStore = defineStore('user', () => {
   async function fetchUsers() {
     loading.value = true
     error.value = null
-
     try {
       const response = await api.getUsers()
       users.value = response.data
     } catch (e) {
-      error.value = 'Error al cargar los usuarios.'
+      error.value = 'Error fetching users.'
     } finally {
       loading.value = false
     }
   }
+
   /**
    * Deletes a user from the API and removes them from the local state.
    * @param {string} userId - The unique ID of the user to be deleted.
@@ -74,10 +74,11 @@ export const useUserStore = defineStore('user', () => {
       await api.deleteUser(userId)
       users.value = users.value.filter((user) => user.id !== userId)
     } catch (e) {
-      console.error('Error al eliminar el usuario:', e)
-      error.value = 'Error al eliminar el usuario.'
+      console.error('Error deleting user:', e)
+      error.value = 'Error deleting user.'
     }
   }
+
   /**
    * Creates a new user via the API and adds it to the beginning of the local state array.
    * @param {object} userData - The user data for the new user.
@@ -91,7 +92,9 @@ export const useUserStore = defineStore('user', () => {
     try {
       loading.value = true
       const response = await api.createUser(userData)
-      users.value.unshift(response.data)
+      if (response.data.success) {
+        users.value.unshift(response.data.data)
+      }
     } catch (e) {
       error.value = 'Error creating user.'
       console.error(e)
@@ -99,6 +102,7 @@ export const useUserStore = defineStore('user', () => {
       loading.value = false
     }
   }
+
   /**
    * Updates an existing user via the API and refreshes the user's data in the local state.
    * @param {string} userId - The unique ID of the user to be updated.
@@ -109,9 +113,11 @@ export const useUserStore = defineStore('user', () => {
     try {
       loading.value = true
       const response = await api.updateUser(userId, userData)
-      const index = users.value.findIndex((user) => user.id === userId)
-      if (index !== -1) {
-        users.value[index] = response.data
+      if (response.data.success) {
+        const index = users.value.findIndex((user) => user.id === userId)
+        if (index !== -1) {
+          users.value[index] = response.data.data
+        }
       }
     } catch (e) {
       error.value = 'Error updating user.'
@@ -122,12 +128,15 @@ export const useUserStore = defineStore('user', () => {
   }
 
   return {
+    // State
     users,
     loading,
     error,
+    // Getters
     totalUsers,
     activeUsers,
     inactiveUsers,
+    // Actions
     fetchUsers,
     deleteUser,
     createUser,

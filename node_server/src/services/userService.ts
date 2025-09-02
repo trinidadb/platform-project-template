@@ -44,11 +44,12 @@ export class UserService {
    *
    * @returns the user created
    */
-  static async create(name: string, email: string, birth_date: string) {
+  static async create(name: string, email: string, active: boolean, birth_date: string) {
     try {
       const user = await User.create({
         email: email,
         name: name,
+        active: active,
         birth_date: new Date(birth_date),
       });
 
