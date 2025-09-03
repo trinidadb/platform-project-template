@@ -11,7 +11,7 @@ import http from "http"; // <-- Import http module
 import { postgresDbConnector } from "./connectors";
 import { ConfigService, swaggerSpec, logger } from "./config";
 import { userRouter } from "./routes";
-import errorHandler from "./middleware/errorHandler";
+import { errorHandler, protectRoute } from "./middleware";
 
 // Request Interface
 export interface Request extends express.Request {
@@ -115,7 +115,7 @@ export class Application {
   }
 
   private routes(): void {
-    this.app.use("/users", userRouter);
+    this.app.use("/users", protectRoute, userRouter);
 
     this.app.use(errorHandler); // capturamos todos los errores de la aplicación
   }
