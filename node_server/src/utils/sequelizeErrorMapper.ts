@@ -26,5 +26,5 @@ export function mapSequelizeError(error: any): AppError {
     return error;
   }
   // Any other case
-  return new AppError("Unexpected database error.", 500);
+  return new AppError(`Unexpected database error. ${error}.`, 500);
 }

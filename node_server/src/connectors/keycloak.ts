@@ -1,11 +1,7 @@
 import axios from 'axios';
+import { ConfigService } from '../config';
 import { URLSearchParams } from 'url';
 import { logger } from '../config';
-
-const keycloakBaseUrl = 'http://localhost:8180'; // Use Docker service name
-const realmName = 'my-app-realm';
-const clientId = 'my-node-app';
-const clientSecret = 'AbCdEfGhIjKlMnOpQrStUvWxYz123456'; // Get this from Client->Credentials tab in Keycloak
 
 
 class KeycloakAdminConnector {
@@ -24,12 +20,12 @@ class KeycloakAdminConnector {
 
     logger.info('Fetching new Keycloak admin token...');
     try {
-      const tokenEndpoint = `${keycloakBaseUrl}/realms/${realmName}/protocol/openid-connect/token`;
+      const tokenEndpoint = `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}/realms/${ConfigService.getInstance().keycloak.realm}/protocol/openid-connect/token`;
       
       const params = new URLSearchParams();
       params.append('grant_type', 'client_credentials');
-      params.append('client_id', clientId);
-      params.append('client_secret', clientSecret);
+      params.append('client_id', ConfigService.getInstance().keycloak.client);
+      params.append('client_secret', ConfigService.getInstance().keycloak.clientSecret);
 
       const response = await axios.post(tokenEndpoint, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

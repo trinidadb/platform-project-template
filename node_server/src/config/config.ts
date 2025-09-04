@@ -52,6 +52,22 @@ export class DnsConfig {
   }
 }
 
+export class KeycloakConfig {
+  public host: string;
+  public port: string;
+  public realm: string;
+  public client: string;
+  public clientSecret: string;
+
+  constructor(configObj: Partial<KeycloakConfig>) {
+    this.host = configObj.host;
+    this.port = configObj.port;
+    this.realm = configObj.realm;
+    this.client = configObj.client;
+    this.clientSecret = configObj.clientSecret;
+  }
+}
+
 // export class S3Config {
 //   public region: string;
 //   public bucket: string;
@@ -72,6 +88,7 @@ export class Config {
   public https: HttpsConfig;
   public db: PostgresConfig;
   public dns: DnsConfig;
+  public keycloak: KeycloakConfig;
   //  public s3: S3Config;
 
   private constructor(configObj: Partial<Config>) {
@@ -80,6 +97,7 @@ export class Config {
     this.https = new HttpsConfig(configObj.https);
     this.db = new PostgresConfig(configObj.db);
     this.dns = new DnsConfig(configObj.dns);
+    this.keycloak = new KeycloakConfig(configObj.keycloak)
     //    this.s3 = new S3Config(configObj.s3);
   }
 
@@ -114,6 +132,13 @@ export class Config {
         dns: {
           enabled: process.env.DNS_ENABLED === "true",
           server: process.env.DNS_SERVER,
+        },
+        keycloak: {
+          host: process.env.KEYCLOAK_HOST,
+          port: process.env.KEYCLOAK_PORT,
+          realm: process.env.KEYCLOAK_REALM_NAME,
+          client: process.env.KEYCLOAK_CLIENT_NAME,
+          clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
         },
         // s3: {
         //   region: process.env.AWS_REGION,

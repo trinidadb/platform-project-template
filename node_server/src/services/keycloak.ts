@@ -1,16 +1,13 @@
 // src/services/keycloakAdminService.ts
 import axios from 'axios';
+import { ConfigService } from "../config";
 import { keycloakAdmin } from '../connectors';
 import { logger } from '../config';
 
-const keycloakBaseUrl = 'http://localhost:8180'; // Use Docker service name
-const realmName = 'my-app-realm';
 
-class KeycloakAdminService {
-  /**
-   * Creates a new user in Keycloak.
-   */
-  public async createUser(userData: {
+export class KeycloakAdminService {
+
+  static async createUser(userData: {
     username: string;
     email: string;
     name: string;
@@ -19,7 +16,7 @@ class KeycloakAdminService {
   }): Promise<void> { // We can make this void since we don't return the user data
     // 1. Get the admin token from the connector
     const token = await keycloakAdmin.getAdminToken();
-    const createUserEndpoint = `${keycloakBaseUrl}/admin/realms/${realmName}/users`;
+    const createUserEndpoint = `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}/admin/realms/${ConfigService.getInstance().keycloak.realm}/users`;
 
     try {
       logger.info(`Service is creating user '${userData.username}'...`);
@@ -58,6 +55,3 @@ class KeycloakAdminService {
   }
 
 }
-
-// Export a singleton instance of the service
-export const keycloakAdminService = new KeycloakAdminService();
