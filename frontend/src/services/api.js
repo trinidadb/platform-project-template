@@ -1,50 +1,73 @@
 // src/services/api.js
+import axios from 'axios'
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-let mockUsers = [
-  { 
-    id: '994fc575-dc38-4718-9fc5-6a23c0ae0832', 
-    name: 'John Doe', 
-    email: 'john.doe@example.com', 
-    active: true, 
-    birth_date: '1995-11-15' 
+/**
+ * @module apiClient
+ * @description Centralized Axios instance for all API calls.
+ * This instance is pre-configured with the base URL and default headers,
+ * ensuring consistency across all requests.
+ */
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  { 
-    id: 'af488024-dc38-4718-9fc5-6a23c0ae0832', 
-    name: 'Test name', 
-    email: 'test@example.com', 
-    active: true, 
-    birth_date: '2000-10-10' 
-  },
-];
+})
 
+/**
+ * @module apiService
+ * @description Service layer that abstracts all interactions with the backend user API.
+ * Each function corresponds to a specific API endpoint.
+ */
 export default {
-  async getUsers() {
-    await sleep(500);
-    return { data: [...mockUsers] };
+  /**
+   * Fetches the list of all users from the backend.
+   * Corresponds to the endpoint: GET /users/
+   * @returns {Promise<import('axios').AxiosResponse<Array<object>>>} A promise that resolves to the Axios response containing the array of users.
+   */
+  getUsers() {
+    return apiClient.get('/')
   },
 
-  async deleteUser(userId) {
-    await sleep(500);
-    mockUsers = mockUsers.filter(user => user.id !== userId);
-    return { status: 204 };
+  /**
+   * Fetches a single user by their unique identifier.
+   * Corresponds to the endpoint: GET /users/:id
+   * @param {string} userId - The ID of the user to retrieve.
+   * @returns {Promise<import('axios').AxiosResponse<object>>} A promise that resolves to the Axios response containing the user data.
+   */
+  getUserById(userId) {
+    return apiClient.get(`/${userId}`)
   },
 
-  async createUser(userData) {
-    await sleep(700);
-    const newUser = { ...userData, id: crypto.randomUUID() };
-    mockUsers.unshift(newUser);
-    return { data: newUser };
+  /**
+   * Sends a request to create a new user with the provided data.
+   * Corresponds to the endpoint: POST /users/create
+   * @param {object} userData - The data for the new user.
+   * @returns {Promise<import('axios').AxiosResponse<object>>} A promise that resolves to the Axios response containing the newly created user.
+   */
+  createUser(userData) {
+    return apiClient.post('/create', userData)
   },
 
-  async updateUser(userId, userData) {
-    await sleep(700);
-    const index = mockUsers.findIndex(user => user.id === userId);
-    if (index !== -1) {
-      mockUsers[index] = { ...mockUsers[index], ...userData };
-      return { data: mockUsers[index] };
-    }
-    return { status: 404, error: 'User not found' };
-  }
-};
+  /**
+   * Sends a request to update an existing user's data.
+   * Corresponds to the endpoint: PUT /users/update
+   * The user ID is included in the request body as per backend requirements.
+   * @param {string} userId - The ID of the user to update.
+   * @param {object} userData - An object containing the user fields to update.
+   * @returns {Promise<import('axios').AxiosResponse<object>>} A promise that resolves to the Axios response containing the updated user.
+   */
+  updateUser(userId, userData) {
+    return apiClient.put('/update', { id: userId, ...userData })
+  },
+
+  /**
+   * Sends a request to delete a user.
+   * Corresponds to the endpoint: POST /users/delete
+   * @param {string} userId - The ID of the user to delete, sent in the request body.
+   * @returns {Promise<import('axios').AxiosResponse>} A promise that resolves to the Axios response, typically with a success status.
+   */
+  deleteUser(userId) {
+    return apiClient.post('/delete', { id: userId })
+  },
+}

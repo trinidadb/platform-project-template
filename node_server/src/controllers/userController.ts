@@ -42,14 +42,14 @@ export class UserController {
    * @params res Response: The response object containing the created user
    */
   static async createUser(req: Request, res: Response, next: NextFunction) {
-    const { name, email, birth_date } = req.body;
+    const { name, email, active, birth_date } = req.body;
 
-    if (!name || !email || !birth_date) {
+    if (!name || !email || typeof active !== 'boolean' || !birth_date) {
       return next(new AppError("Missing required fields", 400));
     }
 
     try {
-      const createdUser = await UserService.create(name, email, birth_date);
+      const createdUser = await UserService.create(name, email, active, birth_date);
       res.status(201).json({
         success: true,
         message: "User created successfully",
@@ -71,7 +71,7 @@ export class UserController {
 
     const { id, name, email, active, birth_date } = body;
 
-    if (!id || !name || !email || !active || !birth_date) {
+    if (!id || !name || !email || typeof active !== 'boolean' || !birth_date) {
       return next(new AppError("Missing required fields", 400));
     }
 
