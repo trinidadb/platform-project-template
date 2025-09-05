@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
-import { logger } from "../config";
+import { ConfigService, logger } from "../config";
 
 // Extend the Express Request interface to include the user payload
 export interface AuthenticatedRequest extends Request {
@@ -11,7 +11,7 @@ export interface AuthenticatedRequest extends Request {
 
 const client = jwksClient({
   // This URL comes from your Keycloak realm's "OpenID Endpoint Configuration"
-  jwksUri: `http://localhost:8180/realms/my-app-realm/protocol/openid-connect/certs`,
+  jwksUri: `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}/realms/${ConfigService.getInstance().keycloak.realm}/protocol/openid-connect/certs`,
 });
 
 // 2. Create a function to get the signing key
@@ -41,9 +41,9 @@ export const protectRoute = (
 
   const verifyOptions: jwt.VerifyOptions = {
     // Check the issuer to make sure it's from your Keycloak realm
-    issuer: `http://localhost:8180/realms/my-app-realm`,
+    issuer: `http://${ConfigService.getInstance().keycloak.issuerHost}:${ConfigService.getInstance().keycloak.issuerPort}/realms/${ConfigService.getInstance().keycloak.realm}`,
     // Check the audience to make sure it's for your client
-    audience: "my-node-app", // This is the 'Client ID'
+    audience: `${ConfigService.getInstance().keycloak.client}`, // This is the 'Client ID'
     algorithms: ["RS256"], // Keycloak's default algorithm
   };
 

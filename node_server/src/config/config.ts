@@ -54,10 +54,12 @@ export class DnsConfig {
 
 export class KeycloakConfig {
   public host: string;
-  public port: string;
+  public port: number;
   public realm: string;
   public client: string;
   public clientSecret: string;
+  public issuerHost: string;
+  public issuerPort:Number;
 
   constructor(configObj: Partial<KeycloakConfig>) {
     this.host = configObj.host;
@@ -65,6 +67,8 @@ export class KeycloakConfig {
     this.realm = configObj.realm;
     this.client = configObj.client;
     this.clientSecret = configObj.clientSecret;
+    this.issuerPort = configObj.issuerPort;
+    this.issuerHost = configObj.issuerHost;
   }
 }
 
@@ -103,7 +107,8 @@ export class Config {
 
   static loadFromEnv(): Config {
     try {
-      const isTestEnv = process.env.NODE_ENV === 'test';
+      const isTestEnv = process.env.APP_ENV === 'test';
+      const isDnsEnabled = process.env.DNS_ENABLED === "true";
 
       const configObj: Partial<Config> = {
         redirect: process.env.REDIRECT === "true",
@@ -130,15 +135,17 @@ export class Config {
           database: isTestEnv ? `${process.env.POSTGRES_DB}_test` : process.env.POSTGRES_DB,
         },
         dns: {
-          enabled: process.env.DNS_ENABLED === "true",
+          enabled: isDnsEnabled,
           server: process.env.DNS_SERVER,
         },
         keycloak: {
           host: process.env.KEYCLOAK_HOST,
-          port: process.env.KEYCLOAK_PORT,
+          port: Number(process.env.KEYCLOAK_PORT),
           realm: process.env.KEYCLOAK_REALM_NAME,
           client: process.env.KEYCLOAK_CLIENT_NAME,
           clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
+          issuerHost: isDnsEnabled ? process.env.DNS_SERVER : process.env.KEYCLOAK_ISSUER_HOST,
+          issuerPort: Number(process.env.KEYCLOAK_ISSUER_PORT),
         },
         // s3: {
         //   region: process.env.AWS_REGION,

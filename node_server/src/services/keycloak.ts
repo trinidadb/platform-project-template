@@ -13,14 +13,13 @@ export class KeycloakAdminService {
     name: string;
     lastname: string;
     password: string;
-  }): Promise<void> { // We can make this void since we don't return the user data
-    // 1. Get the admin token from the connector
+    active: boolean;
+  }): Promise<void> {
     const token = await keycloakAdmin.getAdminToken();
     const createUserEndpoint = `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}/admin/realms/${ConfigService.getInstance().keycloak.realm}/users`;
 
     try {
       logger.info(`Service is creating user '${userData.username}'...`);
-      // 2. Use the token to perform the business logic
       await axios.post(
         createUserEndpoint,
         {
@@ -36,6 +35,9 @@ export class KeycloakAdminService {
               temporary: false,
             },
           ],
+          attributes: { //Assign here new variables.
+            active: userData.active.toString(), // Convert boolean to string, as keycloak only saves strings
+          },
         },
         {
           headers: {
@@ -51,6 +53,28 @@ export class KeycloakAdminService {
         error: error.response?.data || error.message
       });
       throw new Error(error.response?.data?.errorMessage || 'User creation failed.');
+    }
+  }
+
+  static async findUserByUsername(username: string): Promise<any | null> {
+    const token = await keycloakAdmin.getAdminToken();
+    // Note the `exact=true` to avoid partial matches
+    const findUserEndpoint = `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}/admin/realms/${ConfigService.getInstance().keycloak.realm}/users?exact=true&username=${username}`;
+
+    try {
+      const response = await axios.get(findUserEndpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data && response.data.length > 0) {
+        return response.data[0]; // Return the first (and only) match
+      }
+      return null;
+    } catch (error: any) {
+      logger.error(`Failed to find user '${username}' in Keycloak`, {
+        error: error.response?.data || error.message,
+      });
+      throw new Error(error.response?.data?.errorMessage || 'User lookup failed.');
     }
   }
 

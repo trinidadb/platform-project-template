@@ -4,7 +4,7 @@ import { logger } from "../../../config";
 import { UserController } from "../../../controllers";
 
 // service mock
-jest.mock("../../../services/userService");
+jest.mock("../../../services/user");
 
 // logger mock
 jest.mock("../../../config/logger", () => ({

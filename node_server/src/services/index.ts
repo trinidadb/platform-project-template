@@ -1,4 +1,5 @@
-import { UserService } from "./userService";
+import { UserService } from "./user";
 import { KeycloakAdminService } from "./keycloak";
+import { ProfileService } from "./profile";
 
-export { UserService, KeycloakAdminService };
+export { UserService, KeycloakAdminService, ProfileService };

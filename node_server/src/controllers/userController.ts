@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { UserService } from "../services/userService";
+import { UserService } from "../services";
 import AppError from "../utils/appError";
 import { logger } from "../config";
 
