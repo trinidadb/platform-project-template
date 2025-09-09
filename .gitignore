@@ -1,10 +1,8 @@
 # Custome paths
 /database/db_data*
-<<<<<<< Updated upstream
-=======
 .vscode
 */build
->>>>>>> Stashed changes
+*realm.json
 
 # Logs
 logs
