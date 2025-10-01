@@ -4,7 +4,7 @@ import { AppError } from "../utils";
 
 export class KeycloakController {
 
-    private static async _createLocalUserProfile(username: string, active: boolean | undefined) {
+    private static async _createLocalUserProfile(username: string, active: boolean = true) {
         const newUserInKeycloak = await KeycloakAdminService.findUserByUsername(username);
         
         if (!newUserInKeycloak) {
@@ -26,7 +26,7 @@ export class KeycloakController {
         try {
             const createdUser = await KeycloakAdminService.createUser({ username, email, name, lastname, password, active: active || true});
             
-            await this._createLocalUserProfile(username, active);
+            await KeycloakController._createLocalUserProfile(username, active);
             
             res.status(201).json({
                 success: true,

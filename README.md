@@ -405,7 +405,7 @@ All tests live inside the `src/tests/` directory, which is organized as follows:
 
 - `src/tests/integration/:` Contains all integration tests.
 
-Integration tests will point to a test database. This is defined by the `NODE_ENV` variable. Unit tests don't need to have this flag set as there shouldn't be any actual call to external resource (it violets the idea of a unit test).
+Integration tests will point to a test database. This is defined by the `APP_ENV` variable. Unit tests don't need to have this flag set as there shouldn't be any actual call to external resource (it violets the idea of a unit test).
 
 ```
 #package.json
@@ -414,13 +414,13 @@ Integration tests will point to a test database. This is defined by the `NODE_EN
     "build": "rimraf ./build && tsc",
     "start": "node build/index.js",
     "dev": "nodemon src/index.ts",
-    "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test": "cross-env APP_ENV=test jest --runInBand",
     "test:unit": "jest --config jest.config.unit.ts",
-    "test:integration": "cross-env NODE_ENV=test jest --config jest.config.integration.ts --runInBand --detectOpenHandles",
-    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:integration": "cross-env APP_ENV=test jest --config jest.config.integration.ts --runInBand --detectOpenHandles",
+    "test:watch": "cross-env APP_ENV=test jest --watch",
     "test:unit:watch": "jest --config jest.config.unit.ts --watch",
-    "test:integration:watch": "cross-env NODE_ENV=test jest --config jest.config.integration.ts --watch",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage --runInBand"
+    "test:integration:watch": "cross-env APP_ENV=test jest --config jest.config.integration.ts --watch",
+    "test:coverage": "cross-env APP_ENV=test jest --coverage --runInBand"
   },
 ...
 ```
@@ -501,3 +501,34 @@ So, in summary the difference is in this two flags:
 - `--detectOpenHandles`: This is a powerful debugging tool. After the tests run, it scans for any "handles" (like server ports or database connections) that haven't been properly closed. It's great for finding resource leaks but adds a significant performance overhead, making the tests run noticeably slower.
 
 Now yes, happy coding! :)
+
+
+
+That file naming issue (<realm-name>-realm.json) is a known quirk.
+
+## The Problem: Public vs. Private URLs
+Your server container needs to do two different things:
+
+Fetch Keys (Private): It talks to Keycloak internally over the Docker network to get the public keys. For this, it correctly uses the private URL: http://keycloak:8080.
+
+Validate the Token (Public): It inspects the JWT that was issued to your browser/frontend. Keycloak creates this token using its public-facing URL, which is http://localhost:8280.
+
+Your middleware code is currently configured to use the private URL for both tasks, causing a mismatch.
+
+Your incorrect verifyOptions:
+
+TypeScript
+
+const verifyOptions: jwt.VerifyOptions = {
+  // This is what the token CONTAINS: 'http://localhost:8280/...'
+  // This is what you are CHECKING AGAINST: 'http://keycloak:8080/...'
+  // They do not match!
+  issuer: `http://keycloak:8080/realms/my-app-realm`,
+  // ...
+};
+## The Fix ✅
+You need to configure your middleware to use the correct URL for each task:
+
+jwksUri: Use the internal Docker URL (http://keycloak:8080).
+
+issuer: Use the external URL that your frontend uses (http://localhost:8280).

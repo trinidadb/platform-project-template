@@ -1,0 +1,14 @@
+#### WARNING!!! THIS IS NOT READY TO USE. Please refer to the .md with the same name
+# To build this you should run: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+services:
+  keycloak:
+    command: start # This command will OVERRIDE 'start-dev' from the base file
+    environment:
+      # ADD these environment variables for production
+      KC_HOSTNAME: your-domain.com
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/cert.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/key.pem
+    volumes:
+      # ADD these volumes to mount your SSL certificates
+      - ./path/to/certs/cert.pem:/opt/keycloak/conf/cert.pem
+      - ./path/to/certs/key.pem:/opt/keycloak/conf/key.pem

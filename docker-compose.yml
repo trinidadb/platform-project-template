@@ -61,6 +61,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.2.5
+    entrypoint: /bin/sh /opt/keycloak/custom-scripts/keycloak-entrypoint.sh
     container_name: ${KEYCLOAK_CONTAINER_NAME}
     command: start-dev --import-realm --verbose
     ports:
@@ -73,70 +74,78 @@ services:
       KC_DB_URL_DATABASE: ${POSTGRES_DB}_keycloak
       KC_DB_USERNAME: ${POSTGRES_KC_USER}
       KC_DB_PASSWORD: ${POSTGRES_KC_PASSWORD}
+      # Tell Keycloak where to find the import files, instead of the default location: /opt/keycloak/data/import
+      KC_SPI_REALM_IMPORT_LOCATION: /opt/keycloak/custom-scripts/import
+      # Custom variables
+      KEYCLOAK_REALM_NAME: ${KEYCLOAK_REALM_NAME}
+      KEYCLOAK_CLIENT_NAME: ${KEYCLOAK_CLIENT_NAME}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
     networks:
       - platform-net
     volumes:
-      - ./keycloak:/opt/keycloak/data/import
+      #- ./keycloak:/opt/keycloak/custom-scripts
+      - ./keycloak/config:/opt/keycloak/custom-scripts
+      - ./keycloak/realms:/opt/keycloak/data/import
     depends_on:
       postgres_keycloak_db:
         condition: service_healthy
 
-  server:
-    build: ./node_server # Build the Docker image from the server directory
-    container_name: ${SERVER_CONTAINER_NAME}
-    ports:
-      - ${HTTP_PORT}:${HTTP_PORT}
-      - ${HTTPS_PORT}:${HTTPS_PORT}
-    environment:
-      - APP_ENV=${APP_ENV}
-      - DNS_ENABLED=${DNS_ENABLED}
-      - DNS_SERVER=${DNS_SERVER}
-      - POSTGRES_HOST=${POSTGRES_CONTAINER_NAME}
-      - POSTGRES_PORT=${POSTGRES_DOCKER_PORT}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_TEST_HOST=${POSTGRES_CONTAINER_NAME}_test
-      - HTTP_PORT=${HTTP_PORT}
-      - HTTP_BIND=${HTTP_BIND}
-      - HTTPS_PORT=${HTTPS_PORT}
-      - HTTPS_BIND=${HTTPS_BIND}
-      - HTTPS_KEY_FILE=${HTTPS_KEY_FILE}
-      - HTTPS_CERT_FILE=${HTTPS_CERT_FILE}
-      - HTTPS_CA_FILE=${HTTPS_CA_FILE}
-      - KEYCLOAK_HOST=${KEYCLOAK_CONTAINER_NAME}
-      - KEYCLOAK_PORT=${KEYCLOAK_DOCKER_PORT}
-      - KEYCLOAK_ISSUER_PORT=${KEYCLOAK_PORT}
-      - KEYCLOAK_ISSUER_HOST=${KEYCLOAK_HOST}
-      - KEYCLOAK_REALM_NAME=${KEYCLOAK_REALM_NAME}
-      - KEYCLOAK_CLIENT_NAME=${KEYCLOAK_CLIENT_NAME}
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-    depends_on:
-      postgres_db:
-        condition: service_healthy # Ensure the database is ready before starting the server
-    networks:
-      - platform-net
+  # server:
+  #   build: ./node_server # Build the Docker image from the server directory
+  #   container_name: ${SERVER_CONTAINER_NAME}
+  #   ports:
+  #     - ${HTTP_PORT}:${HTTP_PORT}
+  #     - ${HTTPS_PORT}:${HTTPS_PORT}
+  #   environment:
+  #     - APP_ENV=${APP_ENV}
+  #     - DNS_ENABLED=${DNS_ENABLED}
+  #     - DNS_SERVER=${DNS_SERVER}
+  #     - POSTGRES_HOST=${POSTGRES_CONTAINER_NAME}
+  #     - POSTGRES_PORT=${POSTGRES_DOCKER_PORT}
+  #     - POSTGRES_USER=${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #     - POSTGRES_DB=${POSTGRES_DB}
+  #     - POSTGRES_TEST_HOST=${POSTGRES_CONTAINER_NAME}_test
+  #     - HTTP_PORT=${HTTP_PORT}
+  #     - HTTP_BIND=${HTTP_BIND}
+  #     - HTTPS_PORT=${HTTPS_PORT}
+  #     - HTTPS_BIND=${HTTPS_BIND}
+  #     - HTTPS_KEY_FILE=${HTTPS_KEY_FILE}
+  #     - HTTPS_CERT_FILE=${HTTPS_CERT_FILE}
+  #     - HTTPS_CA_FILE=${HTTPS_CA_FILE}
+  #     - KEYCLOAK_HOST=${KEYCLOAK_CONTAINER_NAME}
+  #     - KEYCLOAK_PORT=${KEYCLOAK_DOCKER_PORT}
+  #     - KEYCLOAK_ISSUER_PORT=${KEYCLOAK_PORT}
+  #     - KEYCLOAK_ISSUER_HOST=${KEYCLOAK_HOST}
+  #     - KEYCLOAK_REALM_NAME=${KEYCLOAK_REALM_NAME}
+  #     - KEYCLOAK_CLIENT_NAME=${KEYCLOAK_CLIENT_NAME}
+  #     - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+  #   depends_on:
+  #     postgres_db:
+  #       condition: service_healthy # Ensure the database is ready before starting the server
+  #   networks:
+  #     - platform-net
 
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        - FRONTEND_PORT=${FRONTEND_PORT} # You can't directly pass environment variables from the environment section of your docker-compose.yml to the Dockerfile during the build process. The environment key sets variables for the runtime of the container, not the build-time.
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-    container_name: ${FRONTEND_CONTAINER_NAME}
-    ports:
-      - ${FRONTEND_PORT}:${FRONTEND_PORT}
-    environment:
-      - PORT=${FRONTEND_PORT}
-      - HOST=${FRONTEND_HOST}
-      - HTTP_BIND=${SERVER_CONTAINER_NAME}
-      - HTTP_PORT=${HTTP_PORT}
-      - DNS_ENABLED=${DNS_ENABLED}
-      - DNS_SERVER=${DNS_SERVER}
-    depends_on:
-      - server
-    networks:
-      - platform-net
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     args:
+  #       - FRONTEND_PORT=${FRONTEND_PORT} # You can't directly pass environment variables from the environment section of your docker-compose.yml to the Dockerfile during the build process. The environment key sets variables for the runtime of the container, not the build-time.
+  #       - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+  #   container_name: ${FRONTEND_CONTAINER_NAME}
+  #   ports:
+  #     - ${FRONTEND_PORT}:${FRONTEND_PORT}
+  #   environment:
+  #     - PORT=${FRONTEND_PORT}
+  #     - HOST=${FRONTEND_HOST}
+  #     - HTTP_BIND=${SERVER_CONTAINER_NAME}
+  #     - HTTP_PORT=${HTTP_PORT}
+  #     - DNS_ENABLED=${DNS_ENABLED}
+  #     - DNS_SERVER=${DNS_SERVER}
+  #   depends_on:
+  #     - server
+  #   networks:
+  #     - platform-net
       
 
 networks:

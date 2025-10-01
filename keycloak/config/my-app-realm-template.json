@@ -1,6 +1,6 @@
 {
-  "id": "my-app-realm",
-  "realm": "my-app-realm",
+  "id": "${KEYCLOAK_REALM_NAME}",
+  "realm": "${KEYCLOAK_REALM_NAME}",
   "enabled": true,
   "sslRequired": "external",
   "accessTokenLifespan": 900,
@@ -8,10 +8,10 @@
   "ssoSessionMaxLifespan": 36000,
   "clients": [
     {
-      "clientId": "my-node-app",
-      "name": "My Node App",
+      "clientId": "${KEYCLOAK_CLIENT_NAME}",
+      "name": "ALOHA MORA",
       "enabled": true,
-      "secret": "your_super_secret_and_long_string_here",
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
       "clientAuthenticatorType": "client-secret",
       "publicClient": false,
       "directAccessGrantsEnabled": true,
@@ -33,7 +33,7 @@
           "config": {
             "id.token.claim": "true",
             "access.token.claim": "true",
-            "included.client.audience": "my-node-app"
+            "included.client.audience": "${KEYCLOAK_CLIENT_NAME}"
           }
         }
       ]
@@ -59,7 +59,7 @@
   "clientScopeMappings": {
     "realm-management": [
       {
-        "client": "my-node-app",
+        "client": "${KEYCLOAK_CLIENT_NAME}",
         "roles": [
           "manage-users"
         ]
