@@ -11,9 +11,9 @@ import { Issuer, Client, generators, TokenSet } from "openid-client";
 
 import { postgresDbConnector } from "./connectors";
 import { ConfigService, swaggerSpec, logger } from "./config";
-import { userRouter } from "./routes";
+import { authRouter, userRouter } from "./routes";
 import { errorHandler, protectRoute } from "./middleware";
-import { authService } from "./services";
+import { AuthService } from "./services";
 
 // --- 1. EXTEND SESSION INTERFACE ---
 // This tells TypeScript that our session can hold Keycloak tokens
@@ -46,7 +46,7 @@ export class Application {
   public async start(): Promise<void> {
     try {
       // Initialize Keycloak BEFORE starting the server
-      await authService.initialize();
+      await AuthService.getInstance().initialize();
       
       // Sync Database
       await postgresDbConnector.sync({ force: false });
@@ -134,84 +134,9 @@ export class Application {
     );
   }
 
-  // --- 4. AUTH ROUTES IMPLEMENTATION ---
-  private setupAuthRoutes() {
-    const router = express.Router();
-
-    // LOGIN: Generates PKCE and redirects to Keycloak
-    router.get("/login", (req, res, next) => {
-      if (!authService.client) return next(new Error("OIDC not initialized"));
-
-      const code_verifier = generators.codeVerifier();
-      const code_challenge = generators.codeChallenge(code_verifier);
-      
-      // Store verifier in session to validate later
-      req.session.code_verifier = code_verifier;
-
-      const url = authService.client.authorizationUrl({
-        scope: "openid profile email",
-        code_challenge,
-        code_challenge_method: "S256",
-      });
-
-      res.redirect(url);
-    });
-
-    // CALLBACK: Exchange code for tokens
-    router.get("/callback", async (req, res, next) => {
-        if (!authService.client) return next(new Error("OIDC not initialized"));
-
-        try {
-            const params = authService.client.callbackParams(req);
-            const code_verifier = req.session.code_verifier;
-
-            if (!code_verifier) {
-                throw new Error("Missing code_verifier in session");
-            }
-
-            // Exchange code for token
-            const tokenSet = await authService.client.callback(
-                "http://localhost:8083/auth/callback", 
-                params, 
-                { code_verifier }
-            );
-
-            // Store tokens in session
-            req.session.tokenSet = tokenSet;
-            req.session.code_verifier = undefined; // Clean up
-            req.session.save(); // Ensure session is saved before redirect
-
-            logger.info("User authenticated successfully");
-            res.redirect("/"); // Redirect to dashboard/home
-        } catch (err) {
-            logger.error("Auth Callback Error", { err });
-            res.status(401).send("Authentication Failed");
-        }
-    });
-
-    // LOGOUT
-    router.get("/logout", (req, res) => {
-        const tokenSet = req.session.tokenSet;
-        req.session.destroy(() => {
-             if (authService.client && tokenSet?.id_token) {
-                const url = authService.client.endSessionUrl({
-                    id_token_hint: tokenSet.id_token,
-                    post_logout_redirect_uri: "http://localhost:8083/"
-                });
-                res.redirect(url);
-             } else {
-                 res.redirect("/");
-             }
-        });
-    });
-
-    // Mount these under /auth
-    this.app.use("/auth", router);
-  }
-
   private routes(): void {
     // Register Auth Routes (Login/Callback)
-    this.setupAuthRoutes();
+    this.app.use("/auth", authRouter);
 
     this.app.use("/users", protectRoute, userRouter);
 

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload, TokenExpiredError } from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 import { ConfigService, logger } from "../config";
-import { authService } from "../services";
+import { AuthService } from "../services";
 
 // --- Types ---
 // Ensure express-session knows about the tokenSet (matches your main app declaration)
@@ -95,6 +95,7 @@ export const protectRoute = async (
       try {
         // A. Perform Refresh via AuthService
         // We need to reconstruct a TokenSet object for the openid-client to use
+        const authService = AuthService.getInstance(); // Get Singleton
         const currentTokenSet = new TokenSet(req.session.tokenSet);
         const refreshedTokenSet = await authService.refreshToken(currentTokenSet);
 

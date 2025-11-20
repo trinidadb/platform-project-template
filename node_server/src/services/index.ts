@@ -1,6 +1,6 @@
 import { UserService } from "./user";
 import { KeycloakAdminService } from "./keycloak";
 import { ProfileService } from "./profile";
-import { authService } from "./auth";
+import { AuthService } from "./auth";
 
-export { UserService, KeycloakAdminService, ProfileService, authService };
+export { UserService, KeycloakAdminService, ProfileService, AuthService };
