@@ -7,11 +7,22 @@ import expressSession from "express-session";
 import swaggerUi from "swagger-ui-express";
 import os from "os";
 import http from "http"; // <-- Import http module
+import { Issuer, Client, generators, TokenSet } from "openid-client";
 
 import { postgresDbConnector } from "./connectors";
 import { ConfigService, swaggerSpec, logger } from "./config";
 import { userRouter } from "./routes";
 import { errorHandler, protectRoute } from "./middleware";
+
+// --- 1. EXTEND SESSION INTERFACE ---
+// This tells TypeScript that our session can hold Keycloak tokens
+declare module "express-session" {
+  interface SessionData {
+    tokenSet?: TokenSet;
+    code_verifier?: string;
+    state?: string;
+  }
+}
 
 // Request Interface
 export interface Request extends express.Request {
@@ -21,6 +32,7 @@ export interface Request extends express.Request {
 export class Application {
   public app: express.Application;
   private server: http.Server; // <-- Add a server property
+  private oidcClient: Client;
 
   constructor() {
     this.app = express();
@@ -30,25 +42,30 @@ export class Application {
     this.setupSwagger();
   }
 
-  public start(): void {
-    postgresDbConnector
-      .sync({ force: false })
-      .then(() => {
-        logger.info("Database synced with models");
-        this.server = this.app.listen(
-          ConfigService.getInstance().http.port,
-          () => {
-            logger.info(
-              `Server running on http://${
-                ConfigService.getInstance().http.bind
-              }:${ConfigService.getInstance().http.port}`
-            );
-          }
-        );
-      })
-      .catch((err) => {
-        logger.error("Error synchronising database", { error: err });
-      });
+  public async start(): Promise<void> {
+    try {
+      // Initialize Keycloak BEFORE starting the server
+      await this.setupOidc();
+      
+      // Sync Database
+      await postgresDbConnector.sync({ force: false });
+      logger.info("Database synced with models");
+
+      // Start Listening
+      this.server = this.app.listen(
+        ConfigService.getInstance().http.port,
+        () => {
+          logger.info(
+            `Server running on http://${
+              ConfigService.getInstance().http.bind
+            }:${ConfigService.getInstance().http.port}`
+          );
+        }
+      );
+    } catch (err) {
+      logger.error("Error starting application", { error: err });
+      process.exit(1);
+    }
   }
 
   public async close(): Promise<void> {
@@ -85,6 +102,7 @@ export class Application {
           "Accept",
           "Set-Cookie",
           "auth-token",
+          "Authorization", // <--- IMPORTANT: Allow Authorization header
         ],
       })
     );
@@ -115,7 +133,109 @@ export class Application {
     );
   }
 
+  private async setupOidc() {
+    try {
+      const keycloakUrl = `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}`;
+      const realm = ConfigService.getInstance().keycloak.realm;
+      
+      logger.info(`Discovering OIDC metadata from ${keycloakUrl}/realms/${realm}`);
+
+      const issuer = await Issuer.discover(`${keycloakUrl}/realms/${realm}`);
+
+      this.oidcClient = new issuer.Client({
+        client_id: ConfigService.getInstance().keycloak.client,
+        client_secret: ConfigService.getInstance().keycloak.clientSecret, // Optional
+        redirect_uris: ["http://localhost:8083/auth/callback"], // TODO: verify. possible error cause
+      });
+      
+      logger.info("OIDC Client initialized");
+    } catch (error) {
+      logger.error("Failed to initialize OIDC Client", { error });
+      throw error; // Prevent server start if Auth fails
+    }
+  }
+
+  // --- 4. AUTH ROUTES IMPLEMENTATION ---
+  private setupAuthRoutes() {
+    const router = express.Router();
+
+    // LOGIN: Generates PKCE and redirects to Keycloak
+    router.get("/login", (req, res, next) => {
+      if (!this.oidcClient) return next(new Error("OIDC not initialized"));
+
+      console.log("ALOHA")
+
+      const code_verifier = generators.codeVerifier();
+      const code_challenge = generators.codeChallenge(code_verifier);
+      
+      // Store verifier in session to validate later
+      req.session.code_verifier = code_verifier;
+
+      const url = this.oidcClient.authorizationUrl({
+        scope: "openid profile email",
+        code_challenge,
+        code_challenge_method: "S256",
+      });
+
+      res.redirect(url);
+    });
+
+    // CALLBACK: Exchange code for tokens
+    router.get("/callback", async (req, res, next) => {
+        if (!this.oidcClient) return next(new Error("OIDC not initialized"));
+
+        try {
+            const params = this.oidcClient.callbackParams(req);
+            const code_verifier = req.session.code_verifier;
+
+            if (!code_verifier) {
+                throw new Error("Missing code_verifier in session");
+            }
+
+            // Exchange code for token
+            const tokenSet = await this.oidcClient.callback(
+                "http://localhost:8083/auth/callback", 
+                params, 
+                { code_verifier }
+            );
+
+            // Store tokens in session
+            req.session.tokenSet = tokenSet;
+            req.session.code_verifier = undefined; // Clean up
+            req.session.save(); // Ensure session is saved before redirect
+
+            logger.info("User authenticated successfully");
+            res.redirect("/"); // Redirect to dashboard/home
+        } catch (err) {
+            logger.error("Auth Callback Error", { err });
+            res.status(401).send("Authentication Failed");
+        }
+    });
+
+    // LOGOUT
+    router.get("/logout", (req, res) => {
+        const tokenSet = req.session.tokenSet;
+        req.session.destroy(() => {
+             if (this.oidcClient && tokenSet?.id_token) {
+                const url = this.oidcClient.endSessionUrl({
+                    id_token_hint: tokenSet.id_token,
+                    post_logout_redirect_uri: "http://localhost:8083/"
+                });
+                res.redirect(url);
+             } else {
+                 res.redirect("/");
+             }
+        });
+    });
+
+    // Mount these under /auth
+    this.app.use("/auth", router);
+  }
+
   private routes(): void {
+    // Register Auth Routes (Login/Callback)
+    this.setupAuthRoutes();
+
     this.app.use("/users", protectRoute, userRouter);
 
     this.app.use(errorHandler); // capturamos todos los errores de la aplicación

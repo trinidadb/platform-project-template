@@ -3,6 +3,17 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 import { ConfigService, logger } from "../config";
 
+// --- Types ---
+// Ensure express-session knows about the tokenSet (matches your main app declaration)
+import "express-session";
+import { TokenSet } from "openid-client";
+
+declare module "express-session" {
+  interface SessionData {
+    tokenSet?: TokenSet;
+  }
+}
+
 // Extend the Express Request interface to include the user payload
 export interface AuthenticatedRequest extends Request {
   user?: string | JwtPayload;
@@ -33,11 +44,23 @@ export const protectRoute = (
   res: Response,
   next: NextFunction
 ) => {
+  let token: string | undefined;
+
+  // 1. Check Authorization Header (Bearer)
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  // 2. Check Session (PKCE / Cookie flow)
+  else if (req.session && req.session.tokenSet && req.session.tokenSet.access_token) {
+    token = req.session.tokenSet.access_token;
+  }
+
+  // 3. If no token found in either place, reject
+  if (!token) {
     return res.status(401).json({ message: "Unauthorized: No token provided" });
   }
-  const token = authHeader.split(" ")[1];
 
   const verifyOptions: jwt.VerifyOptions = {
     // Check the issuer to make sure it's from your Keycloak realm
