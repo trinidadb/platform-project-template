@@ -13,6 +13,7 @@ import { postgresDbConnector } from "./connectors";
 import { ConfigService, swaggerSpec, logger } from "./config";
 import { userRouter } from "./routes";
 import { errorHandler, protectRoute } from "./middleware";
+import { authService } from "./services";
 
 // --- 1. EXTEND SESSION INTERFACE ---
 // This tells TypeScript that our session can hold Keycloak tokens
@@ -45,7 +46,7 @@ export class Application {
   public async start(): Promise<void> {
     try {
       // Initialize Keycloak BEFORE starting the server
-      await this.setupOidc();
+      await authService.initialize();
       
       // Sync Database
       await postgresDbConnector.sync({ force: false });
@@ -133,37 +134,13 @@ export class Application {
     );
   }
 
-  private async setupOidc() {
-    try {
-      const keycloakUrl = `http://${ConfigService.getInstance().keycloak.host}:${ConfigService.getInstance().keycloak.port}`;
-      const realm = ConfigService.getInstance().keycloak.realm;
-      
-      logger.info(`Discovering OIDC metadata from ${keycloakUrl}/realms/${realm}`);
-
-      const issuer = await Issuer.discover(`${keycloakUrl}/realms/${realm}`);
-
-      this.oidcClient = new issuer.Client({
-        client_id: ConfigService.getInstance().keycloak.client,
-        client_secret: ConfigService.getInstance().keycloak.clientSecret, // Optional
-        redirect_uris: ["http://localhost:8083/auth/callback"], // TODO: verify. possible error cause
-      });
-      
-      logger.info("OIDC Client initialized");
-    } catch (error) {
-      logger.error("Failed to initialize OIDC Client", { error });
-      throw error; // Prevent server start if Auth fails
-    }
-  }
-
   // --- 4. AUTH ROUTES IMPLEMENTATION ---
   private setupAuthRoutes() {
     const router = express.Router();
 
     // LOGIN: Generates PKCE and redirects to Keycloak
     router.get("/login", (req, res, next) => {
-      if (!this.oidcClient) return next(new Error("OIDC not initialized"));
-
-      console.log("ALOHA")
+      if (!authService.client) return next(new Error("OIDC not initialized"));
 
       const code_verifier = generators.codeVerifier();
       const code_challenge = generators.codeChallenge(code_verifier);
@@ -171,7 +148,7 @@ export class Application {
       // Store verifier in session to validate later
       req.session.code_verifier = code_verifier;
 
-      const url = this.oidcClient.authorizationUrl({
+      const url = authService.client.authorizationUrl({
         scope: "openid profile email",
         code_challenge,
         code_challenge_method: "S256",
@@ -182,10 +159,10 @@ export class Application {
 
     // CALLBACK: Exchange code for tokens
     router.get("/callback", async (req, res, next) => {
-        if (!this.oidcClient) return next(new Error("OIDC not initialized"));
+        if (!authService.client) return next(new Error("OIDC not initialized"));
 
         try {
-            const params = this.oidcClient.callbackParams(req);
+            const params = authService.client.callbackParams(req);
             const code_verifier = req.session.code_verifier;
 
             if (!code_verifier) {
@@ -193,7 +170,7 @@ export class Application {
             }
 
             // Exchange code for token
-            const tokenSet = await this.oidcClient.callback(
+            const tokenSet = await authService.client.callback(
                 "http://localhost:8083/auth/callback", 
                 params, 
                 { code_verifier }
@@ -216,8 +193,8 @@ export class Application {
     router.get("/logout", (req, res) => {
         const tokenSet = req.session.tokenSet;
         req.session.destroy(() => {
-             if (this.oidcClient && tokenSet?.id_token) {
-                const url = this.oidcClient.endSessionUrl({
+             if (authService.client && tokenSet?.id_token) {
+                const url = authService.client.endSessionUrl({
                     id_token_hint: tokenSet.id_token,
                     post_logout_redirect_uri: "http://localhost:8083/"
                 });
