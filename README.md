@@ -532,3 +532,6 @@ You need to configure your middleware to use the correct URL for each task:
 jwksUri: Use the internal Docker URL (http://keycloak:8080).
 
 issuer: Use the external URL that your frontend uses (http://localhost:8280).
+
+## To be able to create/manage an user you will have to add this role manually to the client
+![alt text](image.png)

@@ -14,13 +14,19 @@
       "secret": "${KEYCLOAK_CLIENT_SECRET}",
       "clientAuthenticatorType": "client-secret",
       "publicClient": false,
+      "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
       "redirectUris": [
+        "http://localhost:8083/*",
         "http://localhost:8080/*",
         "http://localhost:3000/*"
       ],
       "webOrigins": [
+        "http://localhost:8083",
         "http://localhost:8080",
         "http://localhost:3000"
       ],
@@ -55,15 +61,5 @@
         }
       ]
     }
-  ],
-  "clientScopeMappings": {
-    "realm-management": [
-      {
-        "client": "${KEYCLOAK_CLIENT_NAME}",
-        "roles": [
-          "manage-users"
-        ]
-      }
-    ]
-  }
+  ]
 }

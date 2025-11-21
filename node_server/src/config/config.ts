@@ -32,7 +32,7 @@ export class HttpConfig {
   constructor(opts: IHttpOptions) {
     this.port = opts.port;
     this.bind = opts.bind;
-    this.keyCloakRedirectURI = `http://${this.bind}:${this.port}/auth/callback`;
+    this.keyCloakRedirectURI = `http://${this.bind}:${this.port}/`;
   }
 }
 

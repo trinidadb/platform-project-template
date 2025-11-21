@@ -11,7 +11,6 @@ export class AuthController {
   // defined as arrow function to preserve 'this' context
   public login = (req: Request, res: Response, next: NextFunction): void => {
     try {
-      // usage: this.authService (not AuthService.getInstance())
       const { url, code_verifier } = this.authService.generateLoginUrl();
 
       req.session.code_verifier = code_verifier;
@@ -39,8 +38,12 @@ export class AuthController {
          if (err) logger.error("Session save error", err);
          res.redirect("/"); 
       });
-    } catch (error) {
-      logger.error("Auth Callback Error", { error });
+    } catch (error: any) {
+      logger.error("Auth Callback Error Details:", { 
+        message: error.message, 
+        stack: error.stack,
+        error_description: error.error_description // OIDC specific
+      });
       res.status(401).send("Authentication Failed");
     }
   };

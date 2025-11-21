@@ -1,4 +1,4 @@
-import { Issuer, Client, generators, TokenSet } from "openid-client";
+import { Issuer, Client, generators, TokenSet, custom } from "openid-client";
 import { ConfigService, logger } from "../config";
 import { Request } from "express";
 
@@ -20,17 +20,50 @@ export class AuthService {
 
     try {
       const config = ConfigService.getInstance().keycloak;
-      const keycloakUrl = `http://${config.host}:${config.port}`;
-      
-      const issuer = await Issuer.discover(`${keycloakUrl}/realms/${config.realm}`);
+
+      // Use INTERNAL URL for server-to-Keycloak discovery
+      const internalKeycloakUrl = `http://${config.host}:${config.port}`;
+
+      // Build external URLs for redirects (what the browser sees)
+      const externalKeycloakUrl = `http://${config.issuerHost}:${config.issuerPort}`;
+      const callbackUrl = `${ConfigService.getInstance().http.keyCloakRedirectURI}auth/callback`;
+
+      const discoveredIssuer = await Issuer.discover(`${internalKeycloakUrl}/realms/${config.realm}`);
+      let issuer = discoveredIssuer;
+
+      // --- FIX FOR RUNNING IN DOCKER: SWAP INTERNAL URL WITH PUBLIC URL ---
+      // Before (the problem):
+      //   Internal (Docker): Your Node app (inside Docker) successfully talks to Keycloak (inside Docker) using the hostname keycloak. That's why your logs show OIDC Client initialized.
+      //   External (Browser): Your Node app generates a Redirect URL based on what it knows (http://keycloak:8080/...) and sends it to the browser.
+      //   The Crash: Your Browser (on your physical machine) tries to go to http://keycloak:8080. Your computer has no idea what keycloak is (it doesn't exist in your DNS/Hosts file), so it crashes with ERR_NAME_NOT_RESOLVED.
+      // The docker 'url' looks like: http://keycloak:8080/realms/...
+      // We need it to look like:     http://localhost:8180/realms/...
+      if (internalKeycloakUrl != externalKeycloakUrl){
+        logger.info("Resorting to create custom issuer/client");
+        issuer = new Issuer({
+          ...discoveredIssuer.metadata,
+          issuer: `${externalKeycloakUrl}/realms/${config.realm}`,
+          
+          // Browser-facing endpoints (external URLs)
+          authorization_endpoint: `${externalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/auth`,
+          end_session_endpoint: `${externalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/logout`,
+          
+          // Server-facing endpoints (internal URLs - faster, direct communication)
+          token_endpoint: `${internalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/token`,
+          userinfo_endpoint: `${internalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/userinfo`,
+          jwks_uri: `${internalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/certs`,
+          revocation_endpoint: `${internalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/revoke`,
+          introspection_endpoint: `${internalKeycloakUrl}/realms/${config.realm}/protocol/openid-connect/token/introspect`,
+        });
+      }
 
       this.client = new issuer.Client({
         client_id: config.client,
         client_secret: config.clientSecret,
-        redirect_uris: ["http://localhost:8083/auth/callback"], 
+        redirect_uris: [callbackUrl], 
         response_types: ["code"],
       });
-      
+
       logger.info("AuthService: OIDC Client initialized");
     } catch (error) {
       logger.error("AuthService: Failed to initialize", { error });
@@ -61,13 +94,12 @@ export class AuthService {
     return { url, code_verifier };
   }
 
-  // 4. Handle Callback (Exchange Code for Token)
   public async exchangeCodeForToken(req: Request, code_verifier: string): Promise<TokenSet> {
     const client = this.getClient();
     const params = client.callbackParams(req);
     
     return await client.callback(
-      "http://localhost:8083/auth/callback", 
+      `${ConfigService.getInstance().http.keyCloakRedirectURI}auth/callback`, 
       params, 
       { code_verifier }
     );
@@ -81,11 +113,11 @@ export class AuthService {
     if (id_token_hint) {
       return client.endSessionUrl({
         id_token_hint,
-        post_logout_redirect_uri: "http://localhost:8083/",
+        post_logout_redirect_uri: ConfigService.getInstance().http.keyCloakRedirectURI,
       });
     }
     
-    return "http://localhost:8083/"; // Fallback
+    return ConfigService.getInstance().http.keyCloakRedirectURI; // Fallback
   }
 
   // 6. Refresh Token (Used by Middleware)
