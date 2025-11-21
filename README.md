@@ -534,4 +534,4 @@ jwksUri: Use the internal Docker URL (http://keycloak:8080).
 issuer: Use the external URL that your frontend uses (http://localhost:8280).
 
 ## To be able to create/manage an user you will have to add this role manually to the client
-![alt text](image.png)
+<img width="1567" height="497" alt="image" src="https://github.com/user-attachments/assets/1993ce8f-de4b-4946-9044-13ef52a7b287" />
