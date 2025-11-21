@@ -1,15 +1,38 @@
 import dotenv from "dotenv";
 import path from "path";
-import { logger } from ".";
+import logger from "./logger";
+import { IHttpOptions, IHttpsOptions, IKeycloakOptions, IPostgresOptions } from "./interfaces";
+
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
+// Helper functions to enforce strictness. All variables should be defined in .env
+function getEnv(key: string): string {
+  const value = process.env[key];
+  if (!value || value.trim() === "") {
+    throw new Error(`[CONFIG ERROR] Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
+function getEnvNumber(key: string): number {
+  const value = getEnv(key);
+  const num = Number(value);
+  if (isNaN(num)) {
+    throw new Error(`[CONFIG ERROR] Environment variable ${key} must be a number, got: ${value}`);
+  }
+  return num;
+}
+
+// Constructors
 export class HttpConfig {
   public port: number;
   public bind: string;
+  public keyCloakRedirectURI: string;
 
-  constructor(configObj: Partial<HttpConfig>) {
-    this.port = configObj.port;
-    this.bind = configObj.bind;
+  constructor(opts: IHttpOptions) {
+    this.port = opts.port;
+    this.bind = opts.bind;
+    this.keyCloakRedirectURI = `http://${this.bind}:${this.port}/auth/callback`;
   }
 }
 
@@ -18,11 +41,11 @@ export class HttpsConfig extends HttpConfig {
   public keyFile: string;
   public certFile: string;
 
-  constructor(configObj: Partial<HttpsConfig>) {
-    super(configObj);
-    this.caFile = configObj.caFile;
-    this.keyFile = configObj.keyFile;
-    this.certFile = configObj.certFile;
+  constructor(opts: IHttpsOptions) {
+    super(opts);
+    this.caFile = opts.caFile;
+    this.keyFile = opts.keyFile;
+    this.certFile = opts.certFile;
   }
 }
 
@@ -33,22 +56,12 @@ export class PostgresConfig {
   public password: string;
   public port: number;
 
-  constructor(configObj: Partial<PostgresConfig>) {
-    this.user = configObj.user;
-    this.host = configObj.host;
-    this.database = configObj.database;
-    this.password = configObj.password;
-    this.port = configObj.port;
-  }
-}
-
-export class DnsConfig {
-  public enabled: boolean;
-  public server: string;
-
-  constructor(configObj: Partial<DnsConfig>) {
-    this.enabled = configObj.enabled ?? false;
-    this.server = configObj.server;
+  constructor(opts: IPostgresOptions) {
+    this.user = opts.user;
+    this.host = opts.host;
+    this.database = opts.database;
+    this.password = opts.password;
+    this.port = opts.port;
   }
 }
 
@@ -59,16 +72,16 @@ export class KeycloakConfig {
   public client: string;
   public clientSecret: string;
   public issuerHost: string;
-  public issuerPort:Number;
+  public issuerPort: number;
 
-  constructor(configObj: Partial<KeycloakConfig>) {
-    this.host = configObj.host;
-    this.port = configObj.port;
-    this.realm = configObj.realm;
-    this.client = configObj.client;
-    this.clientSecret = configObj.clientSecret;
-    this.issuerPort = configObj.issuerPort;
-    this.issuerHost = configObj.issuerHost;
+  constructor(opts: IKeycloakOptions) {
+    this.host = opts.host;
+    this.port = opts.port;
+    this.realm = opts.realm;
+    this.client = opts.client;
+    this.clientSecret = opts.clientSecret;
+    this.issuerHost = opts.issuerHost;
+    this.issuerPort = opts.issuerPort;
   }
 }
 
@@ -86,81 +99,74 @@ export class KeycloakConfig {
 //   }
 // }
 
+
+// Main Config Loader
 export class Config {
   public redirect: boolean;
   public http: HttpConfig;
   public https: HttpsConfig;
   public db: PostgresConfig;
-  public dns: DnsConfig;
   public keycloak: KeycloakConfig;
-  //  public s3: S3Config;
 
-  private constructor(configObj: Partial<Config>) {
-    this.redirect = configObj.redirect ?? false;
-    this.http = new HttpConfig(configObj.http);
-    this.https = new HttpsConfig(configObj.https);
-    this.db = new PostgresConfig(configObj.db);
-    this.dns = new DnsConfig(configObj.dns);
-    this.keycloak = new KeycloakConfig(configObj.keycloak)
-    //    this.s3 = new S3Config(configObj.s3);
+  private constructor(
+    redirect: boolean,
+    http: HttpConfig,
+    https: HttpsConfig,
+    db: PostgresConfig,
+    keycloak: KeycloakConfig
+  ) {
+    this.redirect = redirect;
+    this.http = http;
+    this.https = https;
+    this.db = db;
+    this.keycloak = keycloak;
   }
 
   static loadFromEnv(): Config {
     try {
-      const isTestEnv = process.env.APP_ENV === 'test';
-      const isDnsEnabled = process.env.DNS_ENABLED === "true";
+      const isTestEnv = getEnv("APP_ENV") === "test";
+      const isDnsEnabled = getEnv("DNS_ENABLED") === "true";
+      const redirect = process.env.REDIRECT === "true"; //Doesn't force that variable to be defined in .env
 
-      const configObj: Partial<Config> = {
-        redirect: process.env.REDIRECT === "true",
-        http: {
-          port: process.env.HTTP_PORT
-            ? Number(process.env.HTTP_PORT)
-            : undefined,
-          bind: process.env.HTTP_BIND,
-        },
-        https: {
-          port: process.env.HTTPS_PORT
-            ? Number(process.env.HTTPS_PORT)
-            : undefined,
-          bind: process.env.HTTPS_BIND,
-          keyFile: process.env.HTTPS_KEY_FILE,
-          certFile: process.env.HTTPS_CERT_FILE,
-          caFile: process.env.HTTPS_CA_FILE,
-        },
-        db: {
-          user: process.env.POSTGRES_USER,
-          password: process.env.POSTGRES_PASSWORD,
-          host: isTestEnv ? process.env.POSTGRES_TEST_HOST : process.env.POSTGRES_HOST,
-          port: isTestEnv ? Number(process.env.POSTGRES_TEST_PORT) : Number(process.env.POSTGRES_PORT),
-          database: isTestEnv ? `${process.env.POSTGRES_DB}_test` : process.env.POSTGRES_DB,
-        },
-        dns: {
-          enabled: isDnsEnabled,
-          server: process.env.DNS_SERVER,
-        },
-        keycloak: {
-          host: process.env.KEYCLOAK_HOST,
-          port: Number(process.env.KEYCLOAK_PORT),
-          realm: process.env.KEYCLOAK_REALM_NAME,
-          client: process.env.KEYCLOAK_CLIENT_NAME,
-          clientSecret: process.env.KEYCLOAK_CLIENT_SECRET,
-          issuerHost: isDnsEnabled ? process.env.DNS_SERVER : process.env.KEYCLOAK_ISSUER_HOST,
-          issuerPort: Number(process.env.KEYCLOAK_ISSUER_PORT),
-        },
-        // s3: {
-        //   region: process.env.AWS_REGION,
-        //   bucket: process.env.AWS_S3_BUCKET_NAME,
-        //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        // },
-      };
+      const keyCloakIssuerHost = process.env.KEYCLOAK_ISSUER_HOST ? getEnv("KEYCLOAK_ISSUER_HOST") : getEnv("KEYCLOAK_HOST");
+      const keyCloakIssuerPort = process.env.KEYCLOAK_ISSUER_PORT ? getEnvNumber("KEYCLOAK_ISSUER_PORT") : getEnvNumber("KEYCLOAK_PORT");
 
-      return new Config(configObj);
-    } catch (error) {
-      logger.error("[CONFIG] Failed to load config from environment", {
-        error,
+      const http = new HttpConfig({
+        port: getEnvNumber("HTTP_PORT"),
+        bind: isDnsEnabled ? getEnv("DNS_SERVER") : getEnv("HTTP_BIND"),
       });
-      return new Config({});
+
+      const https = new HttpsConfig({
+        port: getEnvNumber("HTTPS_PORT"),
+        bind: isDnsEnabled ? getEnv("DNS_SERVER") : getEnv("HTTPS_BIND"),
+        keyFile: getEnv("HTTPS_KEY_FILE"),
+        certFile: getEnv("HTTPS_CERT_FILE"),
+        caFile: getEnv("HTTPS_CA_FILE"),
+      });
+
+      const db = new PostgresConfig({
+        user: getEnv("POSTGRES_USER"),
+        password: getEnv("POSTGRES_PASSWORD"),
+        host: isTestEnv ? getEnv("POSTGRES_TEST_HOST") : getEnv("POSTGRES_HOST"),
+        port: isTestEnv ? getEnvNumber("POSTGRES_TEST_PORT") : getEnvNumber("POSTGRES_PORT"),
+        database: isTestEnv ? `${getEnv("POSTGRES_DB")}_test` : getEnv("POSTGRES_DB"),
+      });
+
+      const keycloak = new KeycloakConfig({
+        host: getEnv("KEYCLOAK_HOST"),
+        port: getEnvNumber("KEYCLOAK_PORT"),
+        realm: getEnv("KEYCLOAK_REALM_NAME"),
+        client: getEnv("KEYCLOAK_CLIENT_NAME"),
+        clientSecret: getEnv("KEYCLOAK_CLIENT_SECRET"),
+        issuerHost: isDnsEnabled ? getEnv("DNS_SERVER") : keyCloakIssuerHost,
+        issuerPort: keyCloakIssuerPort,
+      });
+
+      return new Config(redirect, http, https, db, keycloak);
+
+    } catch (error: any) {
+        logger.error(error.message, { error });
+        process.exit(1);
     }
   }
 }

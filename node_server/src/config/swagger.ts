@@ -1,7 +1,6 @@
 import swaggerJsdoc from "swagger-jsdoc";
 import { ConfigService } from "./config";
 
-const swaggerServer = ConfigService.getInstance().dns.enabled ? ConfigService.getInstance().dns.server : ConfigService.getInstance().http.bind
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -13,7 +12,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: `http://${swaggerServer}:${ConfigService.getInstance().http.port}`,
+        url: `http://${ConfigService.getInstance().http.bind}:${ConfigService.getInstance().http.port}`,
         description: "Development server",
       },
     ],
