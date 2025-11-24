@@ -1,4 +1,4 @@
-# ID-Back-Front-Project-Template
+# Platform (Back/Front/DB/Keycloak) Template
 
 Welcome to the project! This document is your guide to understanding, running, and contributing to this application. Please read it carefully to ensure a smooth development process.
 
