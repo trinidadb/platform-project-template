@@ -1,4 +1,5 @@
 import errorHandler from './errorHandler';
-import { protectRoute } from "./auth";
+import { protectRoute } from "./authenticate";
+import { checkRole } from './authorize';
 
-export { errorHandler, protectRoute };
+export { errorHandler, protectRoute, checkRole };

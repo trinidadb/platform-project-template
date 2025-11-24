@@ -6,6 +6,20 @@
   "accessTokenLifespan": 900,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "client": {
+      "${KEYCLOAK_CLIENT_NAME}": [
+        {
+          "name": "basic",
+          "description": "Superuser with full access"
+        },
+        {
+          "name": "advanced",
+          "description": "Standard user access"
+        }
+      ]
+    }
+  },
   "clients": [
     {
       "clientId": "${KEYCLOAK_CLIENT_NAME}",
@@ -59,7 +73,28 @@
           "value": "password",
           "temporary": false
         }
-      ]
+      ],
+      "clientRoles": {
+        "${KEYCLOAK_CLIENT_NAME}": ["basic"]
+      }
+    },
+    {
+      "username": "superuser",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Mr",
+      "lastName": "Super",
+      "email": "superuser@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "${KEYCLOAK_CLIENT_NAME}": ["advanced"]
+      }
     }
   ]
 }
